@@ -135,7 +135,7 @@ def ejemplos(p, inv, cen):
           & g["NOMBRE_INVERSION"].str.upper().str.contains(VISIBLES, na=False) & g["UBIGEO"].isin(cen.index)
           & ~g["NOMBRE_INVERSION"].str.contains("\ufffd", na=True)]  # nombres con tildes rotas en origen
     res = {}
-    for E in [2014, 2018, 2022]:
+    for E in [2010, 2014, 2018, 2022]:
         e = g[(g["ini"] // 12 == E) & (g["ini"] % 12 < 10) & (g["fin"] // 12 == E)]
         for dep, h in [("PE", e)] + list(e.groupby(e["UBIGEO"].str[:2])):
             r = h.sort_values("costo").iloc[-1]

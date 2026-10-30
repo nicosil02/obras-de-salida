@@ -3,399 +3,447 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Obras de salida · Los alcaldes y las obras de fin de gestión en el Perú</title>
+<title>Obras de salida · Dashboard del gasto municipal en obras y el cambio de alcalde, Perú 2008–2026</title>
 <meta name="description" content="Los alcaldes del Perú gastan más en obras en su último año y, cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.">
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <style>
   :root {
-    --fondo: #fbf7ef; --tarjeta: #ffffff; --borde: #e8e2d6;
+    --fondo: #f4f1ea; --tarjeta: #ffffff; --borde: #e6e0d4;
     --tinta: #1d1d1b; --tinta-2: #55524b; --tinta-3: #8a867c;
     --naranja: #d4541c; --azul: #2a78d6; --gris: #d9d5cc;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 1120px; margin: 0 auto; padding: 40px 20px 60px; }
-  .k { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); font-weight: 600; }
-  h1 { font-size: 52px; line-height: 1; letter-spacing: -0.03em; margin: 8px 0 14px; }
-  .lead { font-size: 22px; line-height: 1.4; max-width: 820px; margin: 0 0 26px; }
-  .lead b { color: var(--naranja); }
-  h2 { font-size: 30px; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 6px; }
-  h2 small { display: block; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--naranja); margin-bottom: 4px; }
-  .bajada { color: var(--tinta-2); font-size: 17px; max-width: 760px; margin: 0 0 18px; }
-  section { margin-top: 64px; }
-  .filtros { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center;
-             padding: 12px 16px; background: rgba(251, 247, 239, .94); backdrop-filter: blur(6px);
-             border: 1px solid var(--borde); border-radius: 12px; }
-  .filtros label { font-size: 13px; color: var(--tinta-2); display: flex; gap: 8px; align-items: center; }
-  select { font: inherit; font-size: 15px; padding: 6px 10px; border: 1px solid var(--borde); border-radius: 8px;
-           background: #fff; color: var(--tinta); }
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
-  .kpi { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 16px 18px; }
-  .kpi .v { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; }
-  .kpi .l { font-size: 14px; color: var(--tinta); margin-top: 6px; line-height: 1.35; }
-  .kpi .c { font-size: 12px; color: var(--tinta-3); margin-top: 6px; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .app { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+  /* Panel lateral */
+  aside { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: #1d1d1b; color: #efebe2; padding: 26px 22px; }
+  aside h1 { font-size: 30px; line-height: 1; letter-spacing: -0.03em; margin: 6px 0 10px; color: #fff; }
+  aside .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #a19d93; font-weight: 600; }
+  aside .resp { font-size: 15px; line-height: 1.45; color: #d8d4ca; margin: 0 0 22px; }
+  aside .resp b { color: #ff8a52; }
+  .ctrl { margin-bottom: 18px; }
+  .ctrl label { display: block; font-size: 12px; color: #a19d93; margin-bottom: 6px; letter-spacing: .04em; }
+  aside select { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px; border: 1px solid #3a3935;
+                 background: #2a2926; color: #fff; }
+  .anio-grande { font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: #fff; }
+  .etapa { display: inline-block; margin: 6px 0 10px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; color: #fff; }
+  input[type=range] { width: 100%; accent-color: #ff8a52; }
+  .fila-play { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .fila-play button { font: inherit; font-weight: 700; padding: 7px 14px; border-radius: 99px; border: 0; background: #ff8a52;
+                      color: #1d1d1b; cursor: pointer; }
+  .fila-play span { font-size: 12px; color: #a19d93; }
+  .ley-lat { font-size: 12px; color: #c9c5bb; display: grid; gap: 6px; margin-top: 8px; }
+  .ley-lat i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+  aside a { color: #ff8a52; }
+  aside .pie { font-size: 12px; color: #8f8b81; margin-top: 26px; line-height: 1.6; }
+  /* Contenido */
+  .contenido { padding: 20px 22px 40px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px 16px; }
+  .kpi .t { font-size: 12px; color: var(--tinta-3); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .kpi .v { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: 4px; }
+  .kpi .l { font-size: 13px; color: var(--tinta-2); line-height: 1.35; margin-top: 2px; }
   .naranja { color: var(--naranja); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 20px 22px; }
-  .tarjeta h3 { margin: 0 0 4px; font-size: 18px; }
-  .tarjeta .nota { margin: 0 0 8px; }
-  .nota { font-size: 13px; color: var(--tinta-3); }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin-top: 12px; }
+  .panel { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .panel h3 { margin: 0; font-size: 15px; }
+  .panel .sub { font-size: 12px; color: var(--tinta-3); margin: 2px 0 6px; }
+  .s4 { grid-column: span 4; } .s5 { grid-column: span 5; } .s6 { grid-column: span 6; } .s7 { grid-column: span 7; } .s12 { grid-column: span 12; }
+  .r2 { grid-row: span 2; }
   svg { display: block; width: 100%; height: auto; }
-  .botones { display: flex; gap: 6px; flex-wrap: wrap; }
-  .botones button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--borde);
-                    background: #fff; color: var(--tinta); cursor: pointer; }
-  .botones button.on { background: var(--tinta); border-color: var(--tinta); color: #fff; }
-  .mapa-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; align-items: center; }
-  .titular { font-size: 26px; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; margin: 14px 0; }
-  .ley { display: flex; gap: 16px; font-size: 14px; color: var(--tinta-2); flex-wrap: wrap; }
-  .ley i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
-  .ficha .nombre { font-size: 15px; color: var(--tinta-2); margin: 10px 0 2px; }
-  .barra { height: 26px; border-radius: 99px; background: #eee9df; overflow: hidden; margin: 14px 0 6px; }
+  .titular { font-size: 17px; font-weight: 700; line-height: 1.3; margin: 2px 0 4px; }
+  .ley { display: flex; gap: 14px; font-size: 12px; color: var(--tinta-2); flex-wrap: wrap; margin-top: 4px; }
+  .ley i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; }
+  .barra { height: 22px; border-radius: 99px; background: #eee9df; overflow: hidden; margin: 12px 0 4px; }
   .barra i { display: block; height: 100%; width: 0; background: var(--azul); border-radius: 99px; transition: background .4s; }
   .congelada .barra i { background: #9aa3ad; }
-  .tiempo { display: grid; grid-template-columns: 14px auto 1fr; gap: 8px 10px; align-items: center; margin-top: 16px; font-size: 15px; }
-  .tiempo .pt { width: 12px; height: 12px; border-radius: 50%; }
+  .tiempo { display: grid; grid-template-columns: 12px auto 1fr; gap: 6px 9px; align-items: center; margin-top: 10px; font-size: 13px; }
+  .tiempo .pt { width: 10px; height: 10px; border-radius: 50%; }
   .tiempo span { color: var(--tinta-2); }
-  .porque { background: #1d1d1b; color: #f2efe8; border-radius: 16px; padding: 24px 28px; margin-top: 16px; }
-  .porque h3 { margin: 0 0 8px; font-size: 20px; color: #fff; }
-  .porque p { margin: 8px 0; max-width: 900px; color: #d8d4ca; }
-  .porque b { color: #fff; }
-  .hallazgos { counter-reset: h; list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .hallazgos li { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 16px 18px 16px 58px;
-                  position: relative; }
-  .hallazgos li::before { counter-increment: h; content: counter(h); position: absolute; left: 18px; top: 14px;
-                          font-size: 26px; font-weight: 800; color: var(--naranja); }
-  .texto3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; font-size: 14px; color: var(--tinta-2); }
-  .texto3 h3 { font-size: 16px; color: var(--tinta); margin: 0 0 6px; }
-  .texto3 ul { padding-left: 18px; margin: 0; } .texto3 li { margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: var(--tinta-3); font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+       border-bottom: 1px solid var(--borde); padding: 6px 4px; }
+  td { padding: 6px 4px; border-bottom: 1px solid #f1ede4; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mini { height: 8px; border-radius: 99px; background: var(--naranja); }
+  .porque { background: #1d1d1b; color: #d8d4ca; }
+  .porque h3 { color: #fff; } .porque b { color: #fff; } .porque p { margin: 8px 0; }
+  .abajo { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .abajo .panel { font-size: 13px; color: var(--tinta-2); }
+  .abajo ul, .abajo ol { padding-left: 18px; margin: 6px 0 0; } .abajo li { margin-bottom: 6px; }
+  .abajo h3 { color: var(--tinta); }
   a { color: var(--azul); }
-  .tip { position: fixed; z-index: 30; pointer-events: none; background: #fff; border: 1px solid var(--borde);
-         border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 6px 16px rgba(0,0,0,.1); display: none; max-width: 300px; }
-  footer { margin-top: 56px; font-size: 13px; color: var(--tinta-3); }
-  @media (max-width: 900px) {
-    h1 { font-size: 38px; } .lead { font-size: 19px; }
-    .kpis { grid-template-columns: 1fr 1fr; } .grid2, .mapa-grid, .hallazgos, .texto3 { grid-template-columns: 1fr; }
+  .tip { position: fixed; z-index: 30; pointer-events: none; background: #fff; border: 1px solid var(--borde); border-radius: 8px;
+         padding: 8px 10px; font-size: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.12); display: none; max-width: 300px; }
+  @media (max-width: 1100px) {
+    .app { grid-template-columns: 1fr; } aside { position: static; height: auto; }
+    .kpis { grid-template-columns: 1fr 1fr; } .grid > * { grid-column: span 12; grid-row: auto; } .abajo { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
-<main>
-  <div class="k">Perú · municipalidades · 2011–2026</div>
-  <h1>Obras de salida</h1>
-  <p class="lead">¿Los alcaldes hacen más obras cuando se acaba su gestión? Sí. <b>Gastan más en su último año</b> y,
-    cuando se van, <b>3 de cada 10 obras a medias se quedan sin pagar</b>.</p>
+<div class="app">
+  <aside>
+    <div class="k">Perú · gasto municipal en obras</div>
+    <h1>Obras de salida</h1>
+    <p class="resp">¿Los alcaldes hacen más obras cuando se acaba su gestión? Sí. <b>Gastan más en su último año</b> y, cuando se van,
+      <b>3 de cada 10 obras a medias se quedan sin pagar</b>.</p>
 
-  <div class="filtros" role="group" aria-label="Filtros">
-    <label>Departamento <select id="f-dep"></select></label>
-    <label>Gestión municipal <select id="f-ges">
-      <option value="2011">2011–2014</option><option value="2015">2015–2018</option>
-      <option value="2019" selected>2019–2022</option></select></label>
-    <span class="nota" id="f-nota"></span>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="v naranja" id="k1"></div><div class="l" id="k1l"></div><div class="c">Si repartiera parejo serían S/ 25 por año</div></div>
-    <div class="kpi"><div class="v" id="k2"></div><div class="l" id="k2l"></div><div class="c" id="k2c"></div></div>
-    <div class="kpi"><div class="v naranja" id="k3"></div><div class="l" id="k3l"></div><div class="c" id="k3c"></div></div>
-    <div class="kpi"><div class="v" id="k4"></div><div class="l" id="k4l"></div><div class="c">Obras con menos de 80% pagado</div></div>
-  </div>
-
-  <section>
-    <h2><small>Idea 1</small>El alcalde deja la plata de obras para el final</h2>
-    <p class="bajada">Juntamos todo lo que una municipalidad pagó en obras en sus cuatro años y vemos qué parte pagó cada año.</p>
-    <div class="grid2">
-      <div class="tarjeta">
-        <h3 id="t-alcancia"></h3>
-        <p class="nota">Cada moneda es S/ 1 de cada S/ 100 que la gestión pagó en obras · la línea punteada es lo parejo (S/ 25)</p>
-        <svg id="alcancia" viewBox="0 0 480 380" role="img" aria-label="Pilas de monedas por año de la gestión"></svg>
-      </div>
-      <div class="tarjeta">
-        <h3>Sube hasta la elección y cae con el nuevo alcalde</h3>
-        <p class="nota" id="n-latido"></p>
-        <svg id="latido" viewBox="0 0 480 380" role="img" aria-label="Línea de la parte del gasto de cada año, 2011 a 2022"></svg>
-      </div>
+    <div class="ctrl"><label for="f-dep">Departamento</label><select id="f-dep"></select></div>
+    <div class="ctrl"><label for="f-tam">Tamaño de la municipalidad</label>
+      <select id="f-tam">
+        <option value="todos">Todas</option>
+        <option value="3">Grandes (tercio que más gasta en obras)</option>
+        <option value="2">Medianas</option>
+        <option value="1">Pequeñas (tercio que menos gasta)</option>
+      </select></div>
+    <div class="ctrl"><label for="f-anio">Año</label>
+      <div class="anio-grande" id="a-grande"></div>
+      <div class="etapa" id="a-etapa"></div>
+      <input id="f-anio" type="range" min="2008" max="2026" step="1" value="2022" aria-label="Año">
+      <div class="fila-play"><button id="play" type="button">▶ Recorrer</button><span>2008 → 2026</span></div>
     </div>
-  </section>
+    <div class="ley-lat">
+      <span><i style="background:#d4541c"></i>año de elección municipal</span>
+      <span><i style="background:#2a78d6"></i>otros años</span>
+      <span><i style="background:#d9d5cc"></i>gasto parejo o menor</span>
+    </div>
+    <div class="pie">Datos: MEF, Contraloría, ONPE e Infogob.<br>
+      <a href="#metodo">Metodología y limitaciones</a> · <a href="https://github.com/nicosil02/obras-de-salida">código y datos</a><br>
+      Nicolás Silva · Python Intermedio, QLAB PUCP</div>
+  </aside>
 
-  <section>
-    <h2><small>Idea 2</small>Pasa en casi todo el país</h2>
-    <p class="bajada">Cada distrito se compara consigo mismo. En naranja, los que ese año gastaron en obras más que si hubieran repartido parejo.</p>
-    <div class="tarjeta mapa-grid">
-      <svg id="mapa" viewBox="0 0 520 700" role="img" aria-label="Mapa de distritos que gastaron más que lo parejo"></svg>
-      <div>
-        <div class="botones" id="b-anio" role="group" aria-label="Año de la gestión"></div>
+  <div class="contenido">
+    <div class="kpis">
+      <div class="kpi"><div class="t">Reparto del gasto</div><div class="v naranja" id="k1"></div><div class="l" id="k1l"></div></div>
+      <div class="kpi"><div class="t">Distritos sobre lo parejo</div><div class="v" id="k2"></div><div class="l" id="k2l"></div></div>
+      <div class="kpi"><div class="t">Obras abandonadas</div><div class="v naranja" id="k3"></div><div class="l" id="k3l"></div></div>
+      <div class="kpi"><div class="t">Gasto en obras</div><div class="v" id="k4"></div><div class="l" id="k4l"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel s5 r2">
+        <h3>¿Qué distritos gastaron más que lo parejo?</h3>
+        <div class="sub">Cada distrito comparado consigo mismo dentro de su gestión de 4 años</div>
         <div class="titular" id="m-titular"></div>
-        <div class="ley"><span><i style="background:var(--naranja)"></i>Gastó más que lo parejo (más de S/ 25 de cada 100)</span>
-          <span><i style="background:var(--gris)"></i>Gastó lo parejo o menos</span></div>
-        <p class="nota" style="margin-top:14px">Pasa el mouse por un distrito para ver cómo repartió su gasto en los cuatro años.
-          Cambia de año para ver cómo el mapa se pone naranja hacia la elección.</p>
+        <svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos"></svg>
+        <div class="ley"><span><i style="background:var(--naranja)"></i>más de S/ 25 de cada 100</span>
+          <span><i style="background:var(--gris)"></i>S/ 25 o menos</span><span><i style="background:#f1ede4"></i>sin datos</span></div>
       </div>
-    </div>
-  </section>
+      <div class="panel s7">
+        <h3>El latido: sube hasta la elección, cae con el nuevo alcalde</h3>
+        <div class="sub">S/ de cada 100 de la gestión pagados en cada año · parejo = S/ 25 · haz clic en un año</div>
+        <svg id="latido" viewBox="0 0 640 230" role="img" aria-label="Reparto del gasto por año 2008 a 2025"></svg>
+      </div>
+      <div class="panel s7">
+        <h3>Gasto municipal en obras por año</h3>
+        <div class="sub">S/ millones pagados en proyectos de inversión · haz clic en un año</div>
+        <svg id="anual" viewBox="0 0 640 200" role="img" aria-label="Gasto en obras por año"></svg>
+      </div>
 
-  <section>
-    <h2><small>Idea 3</small>Cuando se va, las obras se quedan a medias</h2>
-    <p class="bajada">Miramos las obras a medio pagar el día que entra el nuevo alcalde y si vuelven a recibir pagos en los dos años siguientes.</p>
-    <div class="grid2">
-      <div class="tarjeta ficha" id="ficha">
-        <div class="k" id="o-lugar"></div>
-        <h3 style="font-size:22px;margin-top:6px">Una obra real que empezó en año electoral</h3>
-        <div class="nombre" id="o-nombre"></div>
-        <div class="nota" id="o-costo"></div>
+      <div class="panel s4">
+        <h3 id="t-alc"></h3>
+        <div class="sub">Cada moneda es S/ 1 de cada S/ 100 de la gestión</div>
+        <svg id="alcancia" viewBox="0 0 400 300" role="img" aria-label="Monedas por año de la gestión"></svg>
+      </div>
+      <div class="panel s4">
+        <h3 id="t-ab"></h3>
+        <div class="sub">% de obras a medias sin ningún pago en los 24 meses siguientes</div>
+        <svg id="aband" viewBox="0 0 400 300" role="img" aria-label="Abandono de obras con y sin cambio de alcalde"></svg>
+      </div>
+      <div class="panel s4" id="ficha">
+        <h3>Una obra real</h3>
+        <div class="sub" id="o-lugar"></div>
+        <div style="font-size:13px;color:var(--tinta-2)" id="o-nombre"></div>
+        <div class="sub" id="o-costo" style="margin-top:4px"></div>
         <div class="barra"><i id="o-barra"></i></div>
-        <div style="display:flex;justify-content:space-between;font-size:15px"><b id="o-pct"></b><span class="nota">pagado</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><b id="o-pct"></b><span class="sub" style="margin:0">pagado</span></div>
         <div class="tiempo" id="o-tiempo"></div>
       </div>
-      <div class="tarjeta">
-        <h3 id="t-aband"></h3>
-        <p class="nota">% de obras a medias que no reciben ningún pago en los 24 meses siguientes</p>
-        <svg id="aband" viewBox="0 0 480 330" role="img" aria-label="Comparación del abandono de obras"></svg>
+
+      <div class="panel s6">
+        <h3 id="t-rank"></h3>
+        <div class="sub">Distritos con al menos S/ 3 millones de obras en la gestión</div>
+        <table><thead><tr><th>Distrito</th><th class="num">S/ de cada 100</th><th style="width:30%"></th><th class="num">Gasto (S/ mill.)</th></tr></thead>
+          <tbody id="rank"></tbody></table>
+      </div>
+      <div class="panel s6 porque">
+        <h3>¿Por qué pasa?</h3>
+        <p>En el Perú los partidos son débiles y la política local gira alrededor de la persona del alcalde. Hasta 2014 podía
+          reelegirse, y le convenía <b>empezar obras antes de votar</b> para mostrarlas en campaña.</p>
+        <p>Desde 2015 no puede reelegirse. Como sabe que se va, <b>acelera los pagos en su último año</b>. El que llega no le debe
+          nada y deja de pagar parte de esas obras, más aún cuando es de otro partido.</p>
+        <p style="color:#a19d93;font-size:12px">El año de la elección se llevaba S/ 29 de cada 100 en 2011–2014 y S/ 34 en 2019–2022.</p>
       </div>
     </div>
-    <div class="porque">
-      <h3>¿Por qué pasa?</h3>
-      <p>En el Perú los partidos son débiles y la política local gira alrededor de la persona del alcalde. Hasta 2014 el alcalde
-        podía reelegirse, y le convenía <b>empezar obras antes de votar</b> para mostrarlas en campaña.</p>
-      <p>Desde 2015 no puede reelegirse. Como sabe que se va, <b>acelera los pagos en su último año</b>. El que llega no le debe
-        nada y deja de pagar parte de esas obras, más aún cuando es de otro partido.</p>
+
+    <div class="abajo" id="metodo">
+      <div class="panel"><h3>Hallazgos</h3><ol>
+        <li><b>El último año es el de más gasto.</b> En la gestión 2019–2022 se pagaron S/ 34 de cada 100 en 2022, el año de la elección, y S/ 21 en el primero.</li>
+        <li><b>Pasa en dos de cada tres distritos.</b> En 2022 el 67% gastó en obras más que lo parejo.</li>
+        <li><b>Al cambiar de alcalde, 3 de cada 10 obras a medias se quedan sin pagar</b> (28% a 32% en 2011, 2015, 2019 y 2023, frente a 18% a 22% en años sin cambio).</li>
+        <li><b>Sin reelección el patrón se marca más</b>, y cuando gana otro partido el abandono sube entre 3 y 9 puntos.</li>
+      </ol></div>
+      <div class="panel"><h3>Metodología</h3><ul>
+        <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2008–2026.</li>
+        <li><b>Reparto.</b> Gasto de cada año como parte de lo pagado en la gestión de 4 años (parejo = 25). En 2007–2010 y 2023–2026 se usa el promedio de los años disponibles.</li>
+        <li><b>Abandono.</b> Obras con pagos en los 6 meses previos al 1 de enero, con menos de 80% de su costo pagado y sin pagos en los 24 meses siguientes.</li>
+        <li>Una regresión con efectos fijos confirma el patrón (detalle en el repositorio).</li>
+      </ul></div>
+      <div class="panel"><h3>Fuentes</h3><ul>
+        <li>MEF, <a href="https://datosabiertos.mef.gob.pe/">datos abiertos</a> (gasto por proyecto, inversiones de Invierte.pe).</li>
+        <li>Contraloría, obras paralizadas a junio de 2026 (<span id="paral"></span> municipales).</li>
+        <li>ONPE e Infogob (JNE), elecciones municipales.</li>
+        <li>INEI, límites distritales.</li>
+      </ul></div>
+      <div class="panel"><h3>Limitaciones</h3><ul>
+        <li>Muestra asociación, no causalidad.</li>
+        <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
+        <li>2007 tiene pocas municipalidades en el SIAF y 2026 llega hasta septiembre.</li>
+      </ul></div>
     </div>
-  </section>
-
-  <section>
-    <h2>Hallazgos</h2>
-    <ol class="hallazgos">
-      <li><b>El último año es el de más gasto.</b> De cada S/ 100 que las municipalidades pagaron en obras en la gestión 2019–2022,
-        S/ 34 se pagaron en 2022, el año de la elección, y S/ 21 en el primer año.</li>
-      <li><b>Pasa en dos de cada tres distritos.</b> En 2022 el 67% de los distritos gastó en obras más que si hubiera repartido parejo.</li>
-      <li><b>Al cambiar de alcalde, 3 de cada 10 obras a medias se quedan sin pagar.</b> Es entre 28% y 32% en los cambios de 2011, 2015,
-        2019 y 2023, frente a 18% a 22% en años sin cambio.</li>
-      <li><b>Sin reelección el patrón se marca más.</b> El año de la elección se llevaba S/ 29 de cada 100 en 2011–2014 y S/ 34 en
-        2019–2022. Cuando gana otro partido, el abandono sube entre 3 y 9 puntos.</li>
-    </ol>
-  </section>
-
-  <section class="texto3">
-    <div><h3>Metodología</h3><ul>
-      <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2008–2026.</li>
-      <li><b>Reparto del gasto.</b> Para cada distrito y gestión de cuatro años, parte del gasto en obras pagada en cada año. Parejo = 25%.</li>
-      <li><b>Abandono.</b> Obras con pagos en los seis meses previos al 1 de enero, pagadas por debajo del 80% de su costo,
-        que no reciben ningún pago en los 24 meses siguientes. Se compara el enero en que entra el alcalde con un enero sin cambio.</li>
-      <li>Una regresión con efectos fijos de municipalidad, año y mes confirma el patrón (gasto de octubre a diciembre del
-        año electoral +40% sin reelección). Detalle en el repositorio.</li>
-    </ul></div>
-    <div><h3>Fuentes</h3><ul>
-      <li>MEF, <a href="https://datosabiertos.mef.gob.pe/">datos abiertos</a>. Gasto por proyecto, transferencias e inversiones de Invierte.pe.</li>
-      <li>Contraloría, inventario de obras paralizadas (junio de 2026, <span id="paral"></span> obras municipales).</li>
-      <li>ONPE e Infogob (JNE), elecciones municipales 2006–2022.</li>
-      <li>INEI, límites distritales (versión simplificada).</li>
-    </ul></div>
-    <div><h3>Limitaciones</h3><ul>
-      <li>Muestra asociación, no causalidad. El inicio del año fiscal también influye en enero.</li>
-      <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
-      <li>2016 y 2017 vienen de otro archivo del MEF. La gestión 2023–2026 no está completa (datos hasta septiembre de 2026).</li>
-    </ul></div>
-  </section>
-
-  <footer>Nicolás Silva · Python Intermedio, QLAB PUCP · <a href="https://github.com/nicosil02/obras-de-salida">código y datos</a></footer>
-</main>
+  </div>
+</div>
 <div class="tip" id="tip"></div>
 
 <script>
 const $ = id => document.getElementById(id);
 const fmt = n => Math.round(n).toLocaleString("es-PE");
-const C = { naranja: "#d4541c", azul: "#2a78d6", gris: "#d9d5cc", moneda: ["#f0c44c", "#c99a1e"], monedaE: ["#e8743f", "#b8441a"] };
-let D, M, GEO, anioMapa = 3;
+const C = { naranja: "#d4541c", azul: "#2a78d6", gris: "#d9d5cc", vacio: "#f1ede4" };
+const ELEC = new Set([2010, 2014, 2018, 2022, 2026]);
+const ANIOS = d3.range(2008, 2027);             // datos de gasto
+const CON_INDICE = d3.range(2008, 2026);        // 2026 esta incompleto
+let D, M, GEO, tercio, timer = null, ultimaGestion = null;
+
+const gestionDe = y => 2007 + 4 * Math.floor((y - 2007) / 4);
+const disponibles = ini => d3.range(Math.max(ini, 2008), Math.min(ini + 3, 2025) + 1);
+const etapa = y => ELEC.has(y) ? "año 4 · elección" : y === gestionDe(y) ? "año 1 · entra el alcalde" : `año ${y - gestionDe(y) + 1} de la gestión`;
 
 Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g]) => {
   D = d; M = m; GEO = g;
+  // Tamano: tercios del gasto total en obras 2008-2025 de cada distrito.
+  const tot = M.columnas.map(c => d3.sum(c.g.slice(0, 18)));
+  const q = [d3.quantile(tot, 1 / 3), d3.quantile(tot, 2 / 3)];
+  tercio = new Map(M.columnas.map((c, i) => [c.u, tot[i] <= q[0] ? "1" : tot[i] <= q[1] ? "2" : "3"]));
   $("f-dep").innerHTML = `<option value="PE">Todo el Perú</option>` +
     Object.entries(D.departamentos).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
   $("paral").textContent = fmt(D.paralizadas);
-  d3.select("#b-anio").selectAll("button").data([0, 1, 2, 3]).join("button")
-    .on("click", (e, j) => { anioMapa = j; mapa(); });
-  ["f-dep", "f-ges"].forEach(id => $(id).addEventListener("change", () => todo(true)));
-  todo(false);
-  // Las animaciones arrancan cuando cada grafico entra en pantalla.
-  const obs = new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) { obs.unobserve(e.target); e.target._animar(); }
-  }), { threshold: 0.4 });
-  [["alcancia", alcancia], ["latido", latido], ["ficha", obra]].forEach(([id, f]) => {
-    $(id)._animar = () => f(true); obs.observe($(id));
-  });
+  $("f-dep").addEventListener("change", () => actualizar(true));
+  $("f-tam").addEventListener("change", () => actualizar(true));
+  $("f-anio").addEventListener("input", () => actualizar(false));
+  $("play").addEventListener("click", () => timer ? parar() : recorrer());
+  actualizar(true);
 });
 
-const estado = () => {
-  const dep = $("f-dep").value, ini = +$("f-ges").value;
-  return { dep, ini, E: ini + 3, T: ini + 4, zona: dep === "PE" ? "Perú" : D.departamentos[dep] };
-};
+function irA(y) { parar(); $("f-anio").value = y; actualizar(false); }
+function parar() { clearInterval(timer); timer = null; $("play").textContent = "▶ Recorrer"; }
+function recorrer() {
+  $("play").textContent = "❚❚ Pausa";
+  if (+$("f-anio").value >= 2026) $("f-anio").value = 2007;
+  const paso = () => { const y = +$("f-anio").value + 1; if (y > 2026) return parar(); $("f-anio").value = y; actualizar(false); };
+  paso(); timer = setInterval(paso, 1600);
+}
 
-// Parte de la gestion pagada cada anio: total de la zona y por distrito.
-function reparto(dep, ini) {
-  const k0 = ini - 2008, tot = [0, 0, 0, 0], porDistrito = new Map();
-  for (const c of M.columnas) {
-    if (dep !== "PE" && c.u.slice(0, 2) !== dep) continue;
-    const t = c.g.slice(k0, k0 + 4), s = d3.sum(t);
-    t.forEach((v, j) => tot[j] += v);
-    if (s > 0.5) porDistrito.set(c.u, t.map(v => 100 * v / s));
+function estado() {
+  const dep = $("f-dep").value, tam = $("f-tam").value, y = +$("f-anio").value, ini = gestionDe(y);
+  const cols = M.columnas.filter(c => (dep === "PE" || c.u.slice(0, 2) === dep) && (tam === "todos" || tercio.get(c.u) === tam));
+  return { dep, tam, y, ini, cols, zona: dep === "PE" ? "Perú" : D.departamentos[dep] };
+}
+
+// Indice "S/ de cada 100": 25 x gasto del anio / promedio anual de la gestion (anios disponibles).
+function indiceZona(cols, y) {
+  if (!CON_INDICE.includes(y)) return null;
+  const anios = disponibles(gestionDe(y)), suma = a => d3.sum(cols, c => c.g[a - 2008]);
+  return 25 * suma(y) / d3.mean(anios, suma);
+}
+function indiceDistritos(cols, y) {
+  const r = new Map(); if (!CON_INDICE.includes(y)) return r;
+  const anios = disponibles(gestionDe(y));
+  for (const c of cols) {
+    const m = d3.mean(anios, a => c.g[a - 2008]);
+    if (m * anios.length > 0.5) r.set(c.u, { v: 25 * c.g[y - 2008] / m, tot: m * anios.length, g: c.g[y - 2008], n: c.n });
   }
-  const S = d3.sum(tot);
-  return { zona: tot.map(v => 100 * v / S), porDistrito };
+  return r;
 }
 
-function todo(animar) {
-  kpis(); alcancia(animar); latido(animar); mapa(); obra(animar); abandono();
+function actualizar(forzar) {
+  const s = estado();
+  $("a-grande").textContent = s.y + (s.y === 2026 ? "*" : "");
+  $("a-etapa").textContent = `${etapa(s.y)} · gestión ${s.ini}–${s.ini + 3}`;
+  $("a-etapa").style.background = ELEC.has(s.y) ? C.naranja : s.y === s.ini ? "#3b6fb6" : "#55524b";
+  const cambio = forzar || s.ini !== ultimaGestion; ultimaGestion = s.ini;
+  kpis(s); mapa(s); latido(s); anual(s); alcancia(s, cambio); abandono(s); if (cambio) obra(s); ranking(s);
 }
 
-function kpis() {
-  const { dep, ini, E, T, zona } = estado();
-  const r = reparto(dep, ini), vals = [...r.porDistrito.values()];
-  const mas = vals.filter(v => v[3] > 25).length;
-  $("f-nota").textContent = `Elección de ${E} · cambio de alcalde en enero de ${T}`;
-  $("k1").textContent = "S/ " + Math.round(r.zona[3]);
-  $("k1l").textContent = `de cada S/ 100 de obras de la gestión ${ini}–${E} se pagaron en ${E}, el año de la elección`;
-  $("k2").textContent = Math.round(100 * mas / vals.length) + "%";
-  $("k2l").textContent = `de los distritos gastó más que lo parejo en ${E}`;
-  $("k2c").textContent = `${fmt(mas)} de ${fmt(vals.length)} distritos · ${zona}`;
-  const a = D.abandono.filter(x => x.dep === dep), t = a.find(x => x.anio === T), p = a.find(x => x.anio === T - 2);
+function kpis(s) {
+  const iz = indiceZona(s.cols, s.y), id = [...indiceDistritos(s.cols, s.y).values()], mas = id.filter(d => d.v > 25).length;
+  $("k1").textContent = iz == null ? "en curso" : "S/ " + Math.round(iz);
+  $("k1l").textContent = iz == null ? "2026 llega hasta septiembre" : `de cada S/ 100 de la gestión ${s.ini}–${s.ini + 3} se pagaron en ${s.y}`;
+  $("k2").textContent = id.length ? Math.round(100 * mas / id.length) + "%" : "—";
+  $("k2l").textContent = id.length ? `${fmt(mas)} de ${fmt(id.length)} distritos gastaron más de S/ 25 de cada 100 en ${s.y}` : "sin índice para 2026";
+  const T = s.ini + 4 <= 2023 ? s.ini + 4 : s.ini, a = D.abandono.filter(x => x.dep === s.dep);
+  const t = a.find(x => x.anio === T), p = a.find(x => x.anio === T - 2);
   $("k3").textContent = t ? Math.round(t.pct) + "%" : "s/d";
-  $("k3l").textContent = `de las obras a medias dejó de recibir pagos cuando entró el nuevo alcalde (${T})`;
-  $("k3c").textContent = p ? `En un año sin cambio de alcalde (${T - 2}) fue ${Math.round(p.pct)}%` : "";
-  $("k4").textContent = t ? fmt(t.abandonadas) : "s/d";
-  $("k4l").textContent = `obras a medias abandonadas en el cambio de alcalde de ${T}`;
+  $("k3l").textContent = t ? `de las obras a medias sin pagos tras el cambio de alcalde de ${T} (${fmt(t.abandonadas)} obras). Sin cambio, ${T - 2}: ${p ? Math.round(p.pct) : "s/d"}%` : "";
+  const g = d3.sum(s.cols, c => c.g[s.y - 2008]), g0 = s.y > 2008 ? d3.sum(s.cols, c => c.g[s.y - 2009]) : null;
+  $("k4").textContent = "S/ " + fmt(g) + " mill.";
+  $("k4l").textContent = s.y === 2026 ? "enero a septiembre de 2026" : g0 ? `${g >= g0 ? "+" : ""}${Math.round(100 * (g / g0 - 1))}% frente a ${s.y - 1} · ${s.zona}` : s.zona;
 }
 
-// ---- Idea 1a: monedas apiladas
-function alcancia(animar) {
-  const { dep, ini, E, zona } = estado(), r = reparto(dep, ini);
-  $("t-alcancia").textContent = `${zona} · gestión ${ini}–${E}`;
-  const svg = d3.select("#alcancia"); svg.selectAll("*").remove();
-  const base = 315, paso = Math.min(6.6, 240 / Math.max(...r.zona)), x = j => 70 + j * 113;
-  svg.append("line").attr("x1", 10).attr("x2", 470).attr("y1", base - 25 * paso).attr("y2", base - 25 * paso)
-    .attr("stroke", "#1d1d1b").attr("stroke-dasharray", "4 5").attr("opacity", .4);
-  r.zona.forEach((v, j) => {
-    const n = Math.round(v), elec = j === 3, col = elec ? C.monedaE : C.moneda;
-    const coins = svg.append("g").selectAll("ellipse").data(d3.range(n)).join("ellipse").attr("cx", x(j))
-      .attr("rx", 36).attr("ry", 9).attr("fill", col[0]).attr("stroke", col[1]).attr("stroke-width", 1.3);
-    const cima = svg.append("text").attr("x", x(j)).attr("y", base - n * paso - 18).attr("text-anchor", "middle")
-      .attr("font-size", elec ? 30 : 20).attr("font-weight", 800).attr("fill", elec ? C.naranja : "#1d1d1b").text("S/ " + n);
-    svg.append("text").attr("x", x(j)).attr("y", base + 34).attr("text-anchor", "middle").attr("font-size", 14)
-      .attr("font-weight", elec ? 800 : 500).attr("fill", elec ? C.naranja : "#55524b").text(ini + j);
-    svg.append("text").attr("x", x(j)).attr("y", base + 52).attr("text-anchor", "middle").attr("font-size", 12)
-      .attr("fill", "#8a867c").text(elec ? "elección" : j === 0 ? "entra el alcalde" : `año ${j + 1}`);
-    if (animar) {
-      coins.attr("cy", -20).attr("opacity", 0).transition().delay(i => 200 + j * 700 + i * 18).duration(300)
-        .ease(d3.easeBounceOut).attr("cy", i => base - i * paso).attr("opacity", 1);
-      cima.attr("opacity", 0).transition().delay(200 + j * 700 + n * 18).duration(300).attr("opacity", 1);
-    } else coins.attr("cy", i => base - i * paso);
-  });
-}
-
-// ---- Idea 1b: latido 2011-2022
-function latido(animar) {
-  const { dep, ini, zona } = estado();
-  const v = [2011, 2015, 2019].flatMap(g => reparto(dep, g).zona.map((s, j) => [g + j, s]));
-  $("n-latido").textContent = `S/ de cada 100 de la gestión pagados cada año · ${zona}`;
-  const svg = d3.select("#latido"); svg.selectAll("*").remove();
-  const x = d3.scaleLinear().domain([2011, 2022]).range([40, 455]);
-  const y = d3.scaleLinear().domain([Math.min(10, d3.min(v, d => d[1]) - 2), Math.max(40, d3.max(v, d => d[1]) + 4)]).range([320, 30]);
-  svg.append("rect").attr("x", x(ini) - 18).attr("width", x(ini + 3) - x(ini) + 36).attr("y", 20).attr("height", 345)
-    .attr("rx", 10).attr("fill", "#f6efe2");
-  svg.append("line").attr("x1", 30).attr("x2", 470).attr("y1", y(25)).attr("y2", y(25)).attr("stroke", "#1d1d1b")
-    .attr("stroke-dasharray", "4 5").attr("opacity", .35);
-  svg.append("text").attr("x", 30).attr("y", y(25) + 16).attr("font-size", 12).attr("fill", "#8a867c").text("parejo = S/ 25");
-  const linea = svg.append("path").datum(v).attr("d", d3.line(d => x(d[0]), d => y(d[1])).curve(d3.curveMonotoneX))
-    .attr("fill", "none").attr("stroke", C.naranja).attr("stroke-width", 4).attr("stroke-linecap", "round");
-  const elec = d => (d[0] - 2011) % 4 === 3;
-  const pts = svg.selectAll("circle").data(v).join("circle").attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
-    .attr("r", d => elec(d) ? 7 : 4.5).attr("fill", d => elec(d) ? C.naranja : C.azul).attr("stroke", "#fff").attr("stroke-width", 2);
-  pts.append("title").text(d => `${d[0]}: S/ ${d[1].toFixed(1)} de cada 100`);
-  const etq = svg.selectAll(".etq").data(v.filter(d => d[0] >= ini && d[0] <= ini + 3)).join("text").attr("class", "etq")
-    .attr("x", d => x(d[0])).attr("y", d => y(d[1]) - 14).attr("text-anchor", "middle").attr("font-size", 15)
-    .attr("font-weight", 800).attr("fill", d => elec(d) ? C.naranja : "#1d1d1b").text(d => Math.round(d[1]));
-  svg.selectAll(".anio").data(v).join("text").attr("class", "anio").attr("x", d => x(d[0])).attr("y", 345)
-    .attr("text-anchor", "middle").attr("font-size", 12).attr("font-weight", d => elec(d) ? 800 : 400)
-    .attr("fill", d => elec(d) ? C.naranja : "#8a867c").text(d => "'" + String(d[0]).slice(2));
-  svg.append("text").attr("x", 460).attr("y", 378).attr("text-anchor", "end").attr("font-size", 12).attr("fill", "#8a867c")
-    .text("● naranja = año de elección");
-  if (animar) {
-    const L = linea.node().getTotalLength();
-    linea.attr("stroke-dasharray", L).attr("stroke-dashoffset", L).transition().duration(3000).ease(d3.easeLinear)
-      .attr("stroke-dashoffset", 0).on("end", () => linea.attr("stroke-dasharray", null));
-    pts.attr("opacity", 0).transition().delay((d, i) => 3000 * i / 11).attr("opacity", 1);
-    etq.attr("opacity", 0).transition().delay(d => 3000 * (d[0] - 2011) / 11 + 150).attr("opacity", 1);
-  }
-}
-
-// ---- Idea 2: mapa de dos colores
-function mapa() {
-  const { dep, ini } = estado(), r = reparto(dep, ini), j = anioMapa, A = ini + j;
-  d3.select("#b-anio").selectAll("button").classed("on", k => k === j)
-    .text(k => k === 3 ? `${ini + k} · elección` : `${ini + k}`);
-  const feats = GEO.features.filter(f => dep === "PE" || f.properties.u.slice(0, 2) === dep);
-  const proj = d3.geoMercator().fitExtent([[10, 10], [510, 690]], { type: "FeatureCollection", features: feats });
-  const path = d3.geoPath(proj), tip = $("tip");
+function mapa(s) {
+  const id = indiceDistritos(s.cols, s.y), tip = $("tip");
+  const feats = GEO.features.filter(f => s.dep === "PE" || f.properties.u.slice(0, 2) === s.dep);
+  const proj = d3.geoMercator().fitExtent([[8, 8], [432, 592]], { type: "FeatureCollection", features: feats });
+  const path = d3.geoPath(proj);
   d3.select("#mapa").selectAll("path").data(feats, f => f.properties.u).join("path")
-    .attr("d", path).attr("stroke", "#fff").attr("stroke-width", dep === "PE" ? 0.25 : 0.6)
+    .attr("d", path).attr("stroke", "#fff").attr("stroke-width", s.dep === "PE" ? 0.2 : 0.5)
     .on("mousemove", (e, f) => {
-      const v = r.porDistrito.get(f.properties.u);
+      const v = id.get(f.properties.u);
       tip.style.display = "block"; tip.style.left = e.clientX + 14 + "px"; tip.style.top = e.clientY + 14 + "px";
-      tip.innerHTML = `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (v ? `De cada S/ 100 de la gestión pagó<br>` +
-        v.map((x, i) => `<span style="${i === j ? "font-weight:800;color:#d4541c" : ""}">${ini + i}: S/ ${Math.round(x)}</span>`).join(" · ")
-        : "sin gasto en obras registrado");
+      tip.innerHTML = `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (v
+        ? `En ${s.y} pagó <b>S/ ${Math.round(v.v)}</b> de cada 100 de su gestión<br>S/ ${v.g.toFixed(1)} millones en obras`
+        : "sin datos para este filtro");
     })
     .on("mouseleave", () => tip.style.display = "none")
-    .transition().duration(500)
-    .attr("fill", f => { const v = r.porDistrito.get(f.properties.u); return !v ? "#f1ede4" : v[j] > 25 ? C.naranja : C.gris; });
-  const vals = [...r.porDistrito.values()], mas = vals.filter(v => v[j] > 25).length;
-  $("m-titular").innerHTML = `En ${A}, <span class="naranja">${fmt(mas)} de ${fmt(vals.length)} distritos</span> ` +
-    `(${Math.round(100 * mas / vals.length)}%) gastaron en obras más que lo parejo.`;
+    .transition().duration(450)
+    .attr("fill", f => { const v = id.get(f.properties.u); return !v ? C.vacio : v.v > 25 ? C.naranja : C.gris; });
+  const vals = [...id.values()], mas = vals.filter(d => d.v > 25).length;
+  $("m-titular").innerHTML = vals.length
+    ? `En ${s.y}, <span class="naranja">${fmt(mas)} de ${fmt(vals.length)} distritos (${Math.round(100 * mas / vals.length)}%)</span> gastaron más que lo parejo`
+    : "2026 está en curso: el reparto se podrá calcular cuando cierre el año";
 }
 
-// ---- Idea 3a: una obra real
-function obra(animar) {
-  const { dep, E, zona } = estado();
-  const propio = (D.ejemplos[dep] || {})[E], o = propio || D.ejemplos.PE[E];
-  $("o-lugar").textContent = o.lugar + (propio || dep === "PE" ? "" : ` · ejemplo nacional, no hay un caso claro en ${zona}`);
+function latido(s) {
+  const v = CON_INDICE.map(y => [y, indiceZona(s.cols, y)]);
+  const svg = d3.select("#latido"); svg.selectAll("*").remove();
+  const x = d3.scalePoint().domain(CON_INDICE).range([34, 620]);
+  const y = d3.scaleLinear().domain([Math.min(12, d3.min(v, d => d[1]) - 2), Math.max(38, d3.max(v, d => d[1]) + 3)]).range([185, 22]);
+  [2011, 2015, 2019, 2023].forEach(g => svg.append("line").attr("x1", x(g) - x.step() / 2).attr("x2", x(g) - x.step() / 2)
+    .attr("y1", 14).attr("y2", 192).attr("stroke", "#e6e0d4"));
+  const g0 = Math.max(s.ini, 2008), g1 = Math.min(s.ini + 3, 2025);
+  svg.append("rect").attr("x", x(g0) - x.step() / 2).attr("width", x.step() * (g1 - g0 + 1)).attr("y", 14).attr("height", 178)
+    .attr("fill", "#f7f0e3");
+  svg.append("line").attr("x1", 20).attr("x2", 630).attr("y1", y(25)).attr("y2", y(25)).attr("stroke", "#1d1d1b")
+    .attr("stroke-dasharray", "4 5").attr("opacity", .35);
+  svg.append("text").attr("x", 22).attr("y", y(25) - 5).attr("font-size", 11).attr("fill", "#8a867c").text("parejo");
+  [[2008, 2010], [2011, 2014], [2015, 2018], [2019, 2022], [2023, 2025]].forEach(([a, b]) =>
+    svg.append("path").datum(v.filter(d => d[0] >= a && d[0] <= b)).attr("fill", "none").attr("stroke", "#1d1d1b")
+      .attr("stroke-width", 2.5).attr("d", d3.line(d => x(d[0]), d => y(d[1]))));
+  svg.selectAll("circle").data(v).join("circle").attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
+    .attr("r", d => d[0] === s.y ? 9 : ELEC.has(d[0]) ? 6 : 4.5)
+    .attr("fill", d => ELEC.has(d[0]) ? C.naranja : C.azul).attr("stroke", d => d[0] === s.y ? "#1d1d1b" : "#fff")
+    .attr("stroke-width", d => d[0] === s.y ? 3 : 1.5).style("cursor", "pointer").on("click", (e, d) => irA(d[0]))
+    .append("title").text(d => `${d[0]}: S/ ${d[1].toFixed(1)} de cada 100`);
+  const sel = v.find(d => d[0] === s.y);
+  if (sel) svg.append("text").attr("x", x(sel[0])).attr("y", y(sel[1]) - 15).attr("text-anchor", "middle").attr("font-size", 15)
+    .attr("font-weight", 800).attr("fill", ELEC.has(sel[0]) ? C.naranja : "#1d1d1b").text("S/ " + Math.round(sel[1]));
+  svg.selectAll(".ax").data(CON_INDICE).join("text").attr("class", "ax").attr("x", d => x(d)).attr("y", 214).attr("text-anchor", "middle")
+    .attr("font-size", 11).attr("font-weight", d => ELEC.has(d) || d === s.y ? 800 : 400)
+    .attr("fill", d => d === s.y ? "#1d1d1b" : ELEC.has(d) ? C.naranja : "#8a867c").text(d => "'" + String(d).slice(2))
+    .style("cursor", "pointer").on("click", (e, d) => irA(d));
+}
+
+function anual(s) {
+  const v = ANIOS.map(y => [y, d3.sum(s.cols, c => c.g[y - 2008])]);
+  const svg = d3.select("#anual"); svg.selectAll("*").remove();
+  const x = d3.scaleBand().domain(ANIOS).range([46, 630]).padding(0.22), y = d3.scaleLinear().domain([0, d3.max(v, d => d[1])]).nice().range([170, 12]);
+  svg.append("g").attr("transform", "translate(46,0)").call(d3.axisLeft(y).ticks(4).tickSize(-584).tickFormat(d => fmt(d)))
+    .call(g => g.select(".domain").remove()).call(g => g.selectAll("line").attr("stroke", "#efebe2"))
+    .call(g => g.selectAll("text").attr("fill", "#8a867c").attr("font-size", 10));
+  svg.selectAll("rect.b").data(v).join("rect").attr("class", "b").attr("x", d => x(d[0])).attr("width", x.bandwidth())
+    .attr("y", d => y(d[1])).attr("height", d => 170 - y(d[1])).attr("rx", 3)
+    .attr("fill", d => ELEC.has(d[0]) ? C.naranja : C.azul).attr("opacity", d => d[0] === s.y ? 1 : d[0] === 2026 ? .3 : .55)
+    .attr("stroke", d => d[0] === s.y ? "#1d1d1b" : null).attr("stroke-width", 2).style("cursor", "pointer")
+    .on("click", (e, d) => irA(d[0])).append("title").text(d => `${d[0]}: S/ ${fmt(d[1])} millones${d[0] === 2026 ? " (hasta septiembre)" : ""}`);
+  svg.selectAll(".ax").data(ANIOS).join("text").attr("class", "ax").attr("x", d => x(d) + x.bandwidth() / 2).attr("y", 186)
+    .attr("text-anchor", "middle").attr("font-size", 11).attr("font-weight", d => d === s.y || ELEC.has(d) ? 800 : 400)
+    .attr("fill", d => d === s.y ? "#1d1d1b" : ELEC.has(d) ? C.naranja : "#8a867c").text(d => "'" + String(d).slice(2));
+  svg.append("text").attr("x", 630).attr("y", 199).attr("text-anchor", "end").attr("font-size", 10).attr("fill", "#8a867c").text("2026 hasta septiembre");
+}
+
+function alcancia(s, animar) {
+  const anios = d3.range(s.ini, s.ini + 4);
+  $("t-alc").textContent = `Gestión ${s.ini}–${s.ini + 3} · ${s.zona}`;
+  const svg = d3.select("#alcancia");
+  const base = 240, paso = 4.8, x = j => 55 + j * 97;
+  if (animar) {
+    svg.selectAll("*").remove();
+    svg.append("line").attr("class", "parejo").attr("x1", 8).attr("x2", 392).attr("y1", base - 25 * paso).attr("y2", base - 25 * paso)
+      .attr("stroke", "#1d1d1b").attr("stroke-dasharray", "4 5").attr("opacity", .35);
+    anios.forEach((a, j) => {
+      const iz = indiceZona(s.cols, a), g = svg.append("g").attr("class", "pila").datum(a);
+      if (iz == null) {
+        g.append("text").attr("x", x(j)).attr("y", base - 20).attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#8a867c")
+          .text(a < 2008 ? "sin datos" : "en curso");
+      } else {
+        const n = Math.round(iz), col = ELEC.has(a) ? ["#e8743f", "#b8441a"] : ["#f0c44c", "#c99a1e"];
+        g.selectAll("ellipse").data(d3.range(n)).join("ellipse").attr("cx", x(j)).attr("rx", 30).attr("ry", 7.5)
+          .attr("fill", col[0]).attr("stroke", col[1]).attr("stroke-width", 1.1)
+          .attr("cy", -20).attr("opacity", 0).transition().delay(i => 150 + j * 450 + i * 12).duration(260).ease(d3.easeBounceOut)
+          .attr("cy", i => base - i * paso).attr("opacity", 1);
+        g.append("text").attr("class", "cima").attr("x", x(j)).attr("y", base - n * paso - 14).attr("text-anchor", "middle")
+          .attr("font-size", ELEC.has(a) ? 22 : 16).attr("font-weight", 800).attr("fill", ELEC.has(a) ? C.naranja : "#1d1d1b").text("S/ " + n);
+      }
+      g.append("text").attr("class", "etq").attr("x", x(j)).attr("y", base + 26).attr("text-anchor", "middle").attr("font-size", 13).text(a);
+      g.append("text").attr("x", x(j)).attr("y", base + 42).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", "#8a867c")
+        .text(ELEC.has(a) ? "elección" : j === 0 ? "entra" : `año ${j + 1}`);
+      g.append("rect").attr("x", x(j) - 44).attr("width", 88).attr("y", 6).attr("height", base + 44).attr("fill", "transparent")
+        .style("cursor", "pointer").on("click", () => irA(Math.max(2008, a)));
+    });
+  }
+  svg.selectAll(".pila .etq").attr("font-weight", a => a === s.y ? 800 : 400).attr("fill", a => a === s.y ? "#1d1d1b" : "#55524b")
+    .text(a => a === s.y ? `▸ ${a}` : a);
+}
+
+function abandono(s) {
+  const T = s.ini + 4 <= 2023 ? s.ini + 4 : s.ini, a = D.abandono.filter(x => x.dep === s.dep);
+  const t = a.find(x => x.anio === T), p = a.find(x => x.anio === T - 2);
+  $("t-ab").textContent = `Cambio de alcalde de enero ${T} · ${s.zona}`;
+  const svg = d3.select("#aband"); svg.selectAll("*").remove();
+  const datos = [[`Enero ${T - 2}`, "mismo alcalde", p, C.gris], [`Enero ${T}`, "nuevo alcalde", t, C.naranja]];
+  const y = d3.scaleLinear().domain([0, Math.max(45, ...datos.map(d => d[2] ? d[2].pct : 0))]).range([220, 40]);
+  datos.forEach(([an, et, v, col], i) => {
+    const cx = 110 + i * 180;
+    if (!v) { svg.append("text").attr("x", cx).attr("y", 180).attr("text-anchor", "middle").attr("fill", "#8a867c").text("sin datos"); return; }
+    svg.append("rect").attr("x", cx - 58).attr("width", 116).attr("rx", 7).attr("fill", col).attr("y", 220).attr("height", 0)
+      .transition().duration(700).delay(i * 250).attr("y", y(v.pct)).attr("height", 220 - y(v.pct));
+    svg.append("text").attr("x", cx).attr("y", y(v.pct) - 10).attr("text-anchor", "middle").attr("font-size", 28).attr("font-weight", 800)
+      .attr("fill", i ? C.naranja : "#1d1d1b").text(Math.round(v.pct) + "%");
+    svg.append("text").attr("x", cx).attr("y", 244).attr("text-anchor", "middle").attr("font-size", 14).attr("font-weight", 700).text(an);
+    svg.append("text").attr("x", cx).attr("y", 262).attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#55524b").text(et);
+    svg.append("text").attr("x", cx).attr("y", 280).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", "#8a867c")
+      .text(`${fmt(v.abandonadas)} de ${fmt(v.n)} obras`);
+  });
+  svg.append("line").attr("x1", 20).attr("x2", 380).attr("y1", 220).attr("y2", 220).attr("stroke", "#1d1d1b").attr("opacity", .3);
+}
+
+function obra(s) {
+  const E = Math.min(s.ini + 3, 2022), propio = (D.ejemplos[s.dep] || {})[E], o = propio || (D.ejemplos.PE || {})[E];
+  if (!o) return;
+  $("o-lugar").textContent = `${o.lugar} · empezó en ${o.ini}, año de elección` +
+    (propio || s.dep === "PE" ? "" : ` · ejemplo nacional`);
   $("o-nombre").textContent = o.n.length >= 140 ? o.n.replace(/\s+\S*$/, "") + "…" : o.n;
   $("o-costo").textContent = `Costo: S/ ${o.costo.toLocaleString("es-PE")} millones`;
   const barra = d3.select("#o-barra"), pct = d3.select("#o-pct"), ficha = d3.select("#ficha");
   ficha.classed("congelada", false);
-  const tiempo = [[C.azul, o.ini, "primer pago"], [C.naranja, `oct ${E}`, "elecciones municipales"],
-                  ["#55524b", o.fin, "último pago"], ["#c9c4b8", `${E + 1} → hoy`, "ningún pago"]];
+  const tiempo = [[C.azul, o.ini, "primer pago"], [C.naranja, `oct ${E}`, "elecciones"], ["#55524b", o.fin, "último pago"],
+                  ["#c9c4b8", `${E + 1} → hoy`, "ningún pago"]];
   const filas = d3.select("#o-tiempo").html("").selectAll("div").data(tiempo.flatMap(t => [t, t, t])).join("div")
-    .attr("class", (d, i) => i % 3 === 0 ? "pt" : null)
-    .style("background", (d, i) => i % 3 === 0 ? d[0] : null)
+    .attr("class", (d, i) => i % 3 === 0 ? "pt" : null).style("background", (d, i) => i % 3 === 0 ? d[0] : null)
     .html((d, i) => i % 3 === 1 ? `<b>${d[1]}</b>` : i % 3 === 2 ? `<span>${d[2]}</span>` : "");
-  const fin = () => { ficha.classed("congelada", true); pct.text(`${o.pct}% · congelada`); };
-  if (animar) {
-    filas.style("opacity", 0).transition().delay((d, i) => 2400 + 300 * Math.floor(i / 3)).style("opacity", 1);
-    barra.style("width", "0%").transition().duration(2200).ease(d3.easeCubicOut).style("width", o.pct + "%");
-    pct.transition().duration(2200).tween("t", () => t => pct.text(Math.round(o.pct * t) + "%")).on("end", fin);
-  } else { barra.style("width", o.pct + "%"); fin(); }
+  filas.style("opacity", 0).transition().delay((d, i) => 1800 + 250 * Math.floor(i / 3)).style("opacity", 1);
+  barra.style("width", "0%").transition().duration(1800).ease(d3.easeCubicOut).style("width", o.pct + "%");
+  pct.transition().duration(1800).tween("t", () => t => pct.text(Math.round(o.pct * t) + "%"))
+    .on("end", () => { ficha.classed("congelada", true); pct.text(`${o.pct}% · congelada`); });
 }
 
-// ---- Idea 3b: abandono con y sin cambio de alcalde
-function abandono() {
-  const { dep, T, zona } = estado();
-  const a = D.abandono.filter(x => x.dep === dep), t = a.find(x => x.anio === T), p = a.find(x => x.anio === T - 2);
-  $("t-aband").textContent = `${zona}: el abandono sube cuando cambia el alcalde`;
-  const svg = d3.select("#aband"); svg.selectAll("*").remove();
-  const datos = [[`Enero ${T - 2}`, "sigue el mismo alcalde", p, C.gris], [`Enero ${T}`, "entra el nuevo alcalde", t, C.naranja]];
-  const y = d3.scaleLinear().domain([0, Math.max(45, ...datos.map(d => d[2] ? d[2].pct : 0))]).range([240, 50]);
-  datos.forEach(([an, et, v, col], i) => {
-    const cx = 130 + i * 220;
-    if (!v) { svg.append("text").attr("x", cx).attr("y", 200).attr("text-anchor", "middle").attr("fill", "#8a867c").text("sin datos"); return; }
-    svg.append("rect").attr("x", cx - 70).attr("width", 140).attr("rx", 8).attr("fill", col)
-      .attr("y", 240).attr("height", 0).transition().duration(900).delay(i * 300)
-      .attr("y", y(v.pct)).attr("height", 240 - y(v.pct));
-    svg.append("text").attr("x", cx).attr("y", y(v.pct) - 12).attr("text-anchor", "middle").attr("font-size", 34)
-      .attr("font-weight", 800).attr("fill", i ? C.naranja : "#1d1d1b").text(Math.round(v.pct) + "%");
-    svg.append("text").attr("x", cx).attr("y", 266).attr("text-anchor", "middle").attr("font-size", 15).attr("font-weight", 700).text(an);
-    svg.append("text").attr("x", cx).attr("y", 286).attr("text-anchor", "middle").attr("font-size", 13).attr("fill", "#55524b").text(et);
-    svg.append("text").attr("x", cx).attr("y", 306).attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#8a867c")
-      .text(`${fmt(v.abandonadas)} de ${fmt(v.n)} obras`);
-  });
-  svg.append("line").attr("x1", 20).attr("x2", 460).attr("y1", 240).attr("y2", 240).attr("stroke", "#1d1d1b").attr("opacity", .3);
+function ranking(s) {
+  const id = [...indiceDistritos(s.cols, s.y).values()].filter(d => d.tot >= 3).sort((a, b) => b.v - a.v).slice(0, 8);
+  $("t-rank").textContent = `Los que más concentraron su gasto en ${s.y} · ${s.zona}`;
+  const max = d3.max(id, d => d.v) || 1;
+  $("rank").innerHTML = id.length ? id.map(d => `<tr><td>${d.n}</td><td class="num"><b>${Math.round(d.v)}</b></td>` +
+    `<td><div class="mini" style="width:${100 * d.v / max}%;background:${d.v > 25 ? C.naranja : C.gris}"></div></td>` +
+    `<td class="num">${d.g.toFixed(1)}</td></tr>`).join("") : `<tr><td colspan="4" class="sub">Sin datos para este año</td></tr>`;
 }
 </script>
 </body>
