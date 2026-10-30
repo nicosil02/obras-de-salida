@@ -178,6 +178,16 @@ def distritos():
         g = mapping(shape(sr.shape.__geo_interface__).simplify(0.0003, preserve_topology=True))
         prov.setdefault(u[:4], []).append({"type": "Feature", "geometry": {"type": g["type"], "coordinates": redondear4(g["coordinates"])},
                                             "properties": {"u": u, "n": sr.record["NOMBDIST"].title(), "p": sr.record["NOMBPROV"].title()}})
+    # Contorno del país sin huecos (lagos): fondo del mapa.
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    pais = unary_union([shape(sh.__geo_interface__).buffer(0.002) for sh in
+                        shapefile.Reader(str(ORIG / "limites" / "DISTRITOS_inei.shp")).iterShapes()])
+    partes = pais.geoms if pais.geom_type == "MultiPolygon" else [pais]
+    pais = unary_union([Polygon(q.exterior) for q in partes if q.area > 1e-4]).simplify(0.003)
+    (DOCS / "pais.json").write_text(json.dumps({"type": "Feature", "properties": {},
+                                                "geometry": {"type": pais.geom_type, "coordinates": redondear4(mapping(pais)["coordinates"])}},
+                                               separators=(",", ":")), encoding="utf-8")
     (DOCS / "prov").mkdir(exist_ok=True)
     for k, v in prov.items():
         (DOCS / "prov" / f"{k}.json").write_text(json.dumps({"type": "FeatureCollection", "features": v}, separators=(",", ":")),

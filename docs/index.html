@@ -248,7 +248,7 @@ const verbo = (pl = true) => (medida === "o" ? (pl ? "tuvieron" : "tuvo") + " m�
   : (pl ? "gastaron" : "gastó") + " más" + (tipo() ? " en " + nombreMed().slice(9) : ""));
 const cambio = r => r >= 2 ? `${r.toFixed(1)} veces` : `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1))}%`;
 const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
-let PROV = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
+let PROV = {}, MAPA = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
 
 const tip = $("tip");
 function verTip(e, html) { tip.style.display = "block"; tip.innerHTML = html;
@@ -262,8 +262,8 @@ function contar(id, v, f) {
   d3.select(el).transition().duration(DUR).tween("n", () => t => el.textContent = f(p + (v - p) * t));
 }
 
-Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g]) => {
-  D = d; M = m; GEO = g;
+Promise.all(["datos.json", "mapa.json", "distritos.geojson", "pais.json"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g, pais]) => {
+  D = d; M = m; GEO = g; MAPA.pais = pais;
   POB = new Map(GEO.features.map(f => [f.properties.u, f.properties.h]));
   // Tamano: tercios del gasto total en obras 2008-2025 de cada distrito.
   const tot = M.columnas.map(c => d3.sum(d3.range(2008, 2026), y => c.g[y - Y0]));
@@ -422,56 +422,72 @@ function anual(s, f) {
   nota.transition().delay(DUR).duration(DUR / 2).attr("opacity", 1);
 }
 
+// Sube un nivel: distrito -> provincia -> departamento -> Perú.
+function subir() {
+  if (distrito) return verDistrito(null);
+  if ($("f-prov").value) $("f-prov").value = "";
+  else if ($("f-dep").value !== "PE") { $("f-dep").value = "PE"; provincias(); }
+  else return;
+  actualizar();
+}
+
+// Siempre se dibuja todo el Perú; lo elegido queda al frente y el resto, translúcido.
+// La cámara (escala y traslado del grupo) se mueve con d3.interpolateZoom.
 function mapa(s) {
   $("t-mapa").textContent = `¿Qué distritos ${verbo()} en ${s.fin} que en ${ini}?`;
   const r = new Map(s.dist.map(d => [d.c.u, d]));
-  // En una provincia se usa su mapa detallado (se carga una vez y se guarda).
-  let base = GEO.features;
-  if (s.area.length === 4) {
-    if (!PROV[s.area]) {
-      PROV[s.area] = "cargando";
-      fetch(`prov/${s.area}.json`).then(r => r.json()).then(j => { PROV[s.area] = j.features; actualizar(); });
-    }
-    if (Array.isArray(PROV[s.area])) base = PROV[s.area];
-  }
-  const feats = base.filter(f => s.area === "PE" || f.properties.u.startsWith(s.area));
-  const proj = d3.geoMercator().fitExtent([[6, 6], [434, 594]], { type: "FeatureCollection", features: feats });
-  const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
-  const svg = d3.select("#mapa"), path = d3.geoPath(proj);
+  const dentro = f => s.area === "PE" || f.properties.u.startsWith(s.area);
+  // Mapas detallados de las provincias de la zona elegida (se cargan una vez).
+  if (s.area !== "PE") Object.keys(D.provincias).filter(k => k.startsWith(s.area) || s.area.startsWith(k)).forEach(k => {
+    if (!PROV[k]) { PROV[k] = "cargando"; fetch(`prov/${k}.json`).then(r => r.json()).then(j => { PROV[k] = j.features; actualizar(); }); }
+  });
+  const feats = GEO.features.map(f => {
+    const det = s.area !== "PE" && dentro(f) && PROV[f.properties.u.slice(0, 4)];
+    return Array.isArray(det) ? det.find(x => x.properties.u === f.properties.u) || f : f;
+  });
+  const svg = d3.select("#mapa");
   let g = svg.select("g.z");
   if (g.empty()) {
     g = svg.append("g").attr("class", "z");
-    // Clic en el fondo: sube un nivel (distrito -> provincia -> departamento -> Perú).
-    svg.on("click", e => {
-      if (e.target !== svg.node()) return;
-      if (distrito) return verDistrito(null);
-      if ($("f-prov").value) $("f-prov").value = "";
-      else if ($("f-dep").value !== "PE") { $("f-dep").value = "PE"; provincias(); }
-      else return;
-      actualizar();
-    });
+    // Contorno del país sin huecos: rellena lagos (Junín, Titicaca) y rendijas fuera de la zona.
+    const exterior = fs => ({ type: "MultiPolygon", coordinates: fs.flatMap(f => f.geometry.type === "Polygon"
+      ? [[f.geometry.coordinates[0]]] : f.geometry.coordinates.map(pol => [pol[0]])) });
+    MAPA.exterior = exterior;
+    MAPA.path = d3.geoPath(d3.geoMercator().fitExtent([[6, 6], [434, 594]], GEO));
+    g.append("path").attr("class", "pais").attr("stroke", "none").attr("fill", "#d5d7da").attr("opacity", 0.3)
+      .attr("d", MAPA.path(MAPA.pais));
+    g.append("path").attr("class", "fondo").attr("stroke", "none");
+    svg.on("click", e => { if (e.target === svg.node()) subir(); });
   }
-  const sel = distrito && feats.find(f => f.properties.u === distrito);
-  const ps = g.selectAll("path").data(feats, f => f.properties.u).join("path")
+  const path = MAPA.path, sel = distrito && feats.find(f => f.properties.u === distrito);
+  const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
+  const ps = g.selectAll("path.d").data(feats, f => f.properties.u).join("path").attr("class", "d")
     .attr("d", path)
     .attr("stroke", f => f === sel ? C.tinta : "#fff")
-    .attr("stroke-width", f => f === sel ? 2.5 : s.area === "PE" ? 0.3 : 0.8)
-    .on("click", (e, f) => verDistrito(distrito ? (f === sel ? distrito : null) : f.properties.u))
+    .attr("stroke-width", f => f === sel ? 2.5 : dentro(f) && s.area !== "PE" ? 0.8 : 0.3)
+    .on("click", (e, f) => sel ? (f === sel ? null : verDistrito(null)) : dentro(f) ? verDistrito(f.properties.u) : subir())
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
         ? `${ini}: ${fv(d.a)}<br>${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
-        : "Sin datos para este filtro") + `<br><i>${distrito ? "Clic fuera del distrito para volver a la provincia" : "Clic para ver su gasto año por año"}</i>`); })
+        : "Fuera de la zona elegida") + `<br><i>${sel && f !== sel || !dentro(f) ? "Clic para volver a la vista anterior" : "Clic para ver su gasto año por año"}</i>`); })
     .on("mouseleave", ocultarTip);
-  ps.filter(f => f === sel).raise();
-  ps.transition().duration(DUR).attr("fill", f => color(r.get(f.properties.u)))
-    .style("opacity", f => !sel || f === sel ? 1 : 0.4);
-  // Acercamiento suave al distrito elegido; los vecinos quedan atenuados alrededor.
-  let t = "translate(0,0) scale(1)";
-  if (sel) {
-    const [[x0, y0], [x1, y1]] = path.bounds(sel), k = Math.max(1, Math.min(3, 0.45 * Math.min(440 / (x1 - x0), 600 / (y1 - y0))));
-    t = `translate(${220 - k * (x0 + x1) / 2},${300 - k * (y0 + y1) / 2}) scale(${k})`;
-  }
-  g.transition().duration(DUR * 1.4).attr("transform", t);
+  ps.filter(dentro).raise(); ps.filter(f => f === sel).raise();
+  // Capa de fondo con el contorno exterior de la zona: tapa las rendijas que deja la
+  // simplificación entre distritos vecinos (se veían como ríos blancos al acercar).
+  g.select("path.fondo").attr("d", path(MAPA.exterior(feats.filter(dentro)))).attr("fill", "#c9ccd0");
+  ps.transition().duration(DUR).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#d5d7da")
+    .style("opacity", f => !dentro(f) ? 0.3 : sel && f !== sel ? 0.45 : 1);
+  // Vista = [centro x, centro y, alto visible]; el mapa completo es [220, 300, 600].
+  const vista = (b, holgura) => { const [[x0, y0], [x1, y1]] = b;
+    return [(x0 + x1) / 2, (y0 + y1) / 2, Math.max(y1 - y0, (x1 - x0) * 600 / 440) * holgura]; };
+  let v = [220, 300, 600];
+  if (s.area !== "PE") v = vista(path.bounds({ type: "FeatureCollection", features: feats.filter(dentro) }), 1.08);
+  if (sel) { const vd = vista(path.bounds(sel), 2.2); vd[2] = Math.max(vd[2], v[2] / 3); v = vd; }
+  const v0 = MAPA.v || [220, 300, 600], i = d3.interpolateZoom(v0, v);
+  MAPA.v = v;
+  const tr = v => { const k = 600 / v[2]; return `translate(${220 - k * v[0]},${300 - k * v[1]}) scale(${k})`; };
+  g.interrupt().transition().duration(DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0).ease(d3.easeCubicInOut)
+    .attrTween("transform", () => t => tr(i(t)));
 }
 
 function abandono(s) {
