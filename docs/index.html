@@ -299,8 +299,8 @@ function contar(id, v, f) {
   d3.select(el).transition().duration(DUR).tween("n", () => t => el.textContent = f(p + (v - p) * t));
 }
 
-Promise.all(["datos.json", "mapa.json", "distritos.geojson", "pais.json"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g, pais]) => {
-  D = d; M = m; GEO = g; MAPA.pais = pais;
+Promise.all(["datos.json", "mapa.json", "distritos.geojson", "pais.json", "limites.json"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g, pais, lim]) => {
+  D = d; M = m; GEO = g; MAPA.pais = pais; MAPA.lim = lim.features;
   POB = new Map(GEO.features.map(f => [f.properties.u, f.properties.h]));
   // Tamano: tercios del gasto total en obras 2008-2025 de cada distrito.
   const tot = M.columnas.map(c => d3.sum(d3.range(2008, 2026), y => c.g[y - Y0]));
@@ -605,6 +605,12 @@ function mapa(s) {
       .attr("d", s.area === "PE" ? path(MAPA.pais) : (MAPA.fondos[fk] ??= path(MAPA.exterior(feats.filter(dentro)))));
     mueve ? setTimeout(fondo, 900) : fondo();
   }
+  // Bordes de lo que se elige con el próximo clic: departamentos en el Perú, provincias dentro de un departamento.
+  const lim = n === 6 ? [] : MAPA.lim.filter(f => f.properties.u.length === n && f.properties.u.startsWith(s.area === "PE" ? "" : s.area));
+  g.selectAll("path.lim").data(lim, f => f.properties.u)
+    .join(e => e.append("path").attr("class", "lim").attr("fill", "none").attr("pointer-events", "none")
+      .attr("stroke", C.tinta).attr("opacity", 0.7).attr("d", path))
+    .attr("stroke-width", 1.1 / k).raise();
   // Si la cámara se mueve, los colores cambian de una vez (animar ambos a la vez traba el zoom).
   (mueve ? ps : ps.transition().duration(DUR)).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#d5d7da")
     .style("opacity", f => !dentro(f) ? 0.3 : sel && f !== sel ? 0.45 : 1);
