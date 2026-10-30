@@ -73,8 +73,9 @@
   .chip button { font: inherit; font-size: 13px; margin-top: 6px; padding: 4px 10px; border: 1px solid #c9ccd0; border-radius: 6px;
                  background: var(--papel); cursor: pointer; }
   #mapa path { cursor: pointer; }
-  #mapa g.z { will-change: transform; }
-  #mapa { overflow: hidden; }
+  #mapa { overflow: hidden; display: block; }
+  .mapa-w { position: relative; }
+  #mapa-c { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
   .porque p b { color: var(--tinta); }
   .texto { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 16px; margin-top: 16px; font-size: 13.5px; color: var(--tinta-2); }
   .texto h2 { font-size: 15px; color: var(--tinta); margin: 0 0 6px; }
@@ -146,7 +147,7 @@
       <h2 id="t-ciclo"></h2>
       <p class="sub" id="s-ciclo"></p>
       <svg id="ciclo" viewBox="0 0 1000 290" role="img" aria-label="Gasto mensual en obras en el año de elecciones frente al año anterior"></svg>
-      <p class="sub" style="margin:16px 0 22px">Campaña (junio a setiembre) y tras la elección (octubre a diciembre) frente a los mismos meses del año anterior, en cada elección. Haz clic para verla.</p>
+      <p class="sub" style="margin:16px 0 22px">Cada elección frente a los mismos meses del año anterior. Campaña es de junio a setiembre y tras la elección, de octubre a diciembre.</p>
       <div class="elecs" id="elecs"></div>
       <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
         <span><i style="background:var(--barra)"></i>Año anterior</span>
@@ -165,8 +166,9 @@
     <div class="fila f-mapa">
       <section class="panel">
         <h2 id="t-mapa"></h2>
-        <p class="sub">Junio a diciembre del año de elecciones frente a los mismos meses del año anterior, en soles de 2022. Haz clic en un distrito para verlo y en el fondo para volver a la vista anterior.</p>
-        <svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos según cuánto cambió su gasto"></svg>
+        <p class="sub">En soles de 2022. Haz clic en un departamento, luego en una provincia y luego en un distrito. Clic en el fondo para volver.</p>
+        <div class="mapa-w"><svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos según cuánto cambió su gasto"></svg>
+          <canvas id="mapa-c" aria-hidden="true"></canvas></div>
         <div class="ley"><span><i style="background:var(--acento)"></i>Más del doble</span>
           <span><i style="background:var(--acento-claro)"></i>Más, pero menos del doble</span>
           <span><i style="background:var(--barra)"></i>Igual o menos</span><span><i style="background:var(--vacio)"></i>Sin datos</span></div>
@@ -204,8 +206,7 @@
           Antes ya pasaba con los que no fueron reelegidos: de octubre a diciembre de 2010 el gasto subió 9% donde el alcalde se iba y cayó 25% donde se quedaba.
           El que llega no tiene por qué terminar las obras de otro, y su primer año la inversión cae cerca de 25% (Jiménez, Merino y Sosa, 2020).</p>
         <p>Con datos anuales, los estudios no encontraban un ciclo claro en el monto invertido antes de 2015 (Pebe, Radas y Torres, 2017; Armas y Puppo, 2021).
-          Con datos mensuales sí aparece, porque cada mes se compara con el mismo mes de otro año y en diciembre todas las
-          entidades del Estado gastan más por el cierre del año fiscal.</p></div>
+          Calza con lo que se ve aquí. Antes de 2015 el salto de fin de gestión era chico, y en un año entero se diluye.</p></div>
       </section>
     </div>
 
@@ -393,7 +394,7 @@ function kpis(s) {
   // Con un distrito elegido, el primer indicador es el de ese distrito.
   const [a, b] = s.sel ? [gas2(s.sel, s.pre), gas2(s.sel, s.fin)] : [s.primero, s.ultimo];
   contar("k1", a > 0 ? b / a : null, cambio);
-  $("k1l").textContent = `${nombreMed()}${s.sel ? " de " + s.sel.n : ""} de junio a diciembre de ${s.fin}, campaña y salida del alcalde, frente a los mismos meses de ${s.pre} (de ${fv(a)} a ${fv(b)})`;
+  $("k1l").textContent = `${nombreMed()}${s.sel ? " de " + s.sel.n : ""} de junio a diciembre de ${s.fin} frente a los mismos meses de ${s.pre} (de ${fv(a)} a ${fv(b)})`;
   contar("k2", 100 * mas / s.dist.length, v => Math.round(v) + "%");
   $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} de junio a diciembre de ${s.fin} que en ${s.pre} (${s.zona})`;
   contar("k3", t && t.pct, v => Math.round(v) + "%");
@@ -410,7 +411,6 @@ function ciclo(s) {
   const suma = (y, ms) => d3.sum(ms, m => val(y, m));
   const V = [["Campaña", [6, 7, 8, 9]], ["Tras la elección", [10, 11, 12]]]
     .map(([l, ms]) => ({ l, ms, r: suma(s.pre, ms) > 0 ? suma(s.fin, ms) / suma(s.pre, ms) : null }));
-  const R = D.regresion["indice_gasto|sin_reeleccion|eleccion"], pc = v => Math.round(Math.abs(v.pct)) + "%";
   // Las cuatro elecciones: el salto tras la elección aparece desde que se prohibió la reelección.
   const rel = (f, ms) => suma(f - 1, ms) > 0 ? suma(f, ms) / suma(f - 1, ms) : null;
   const E = GESTIONES.map(g => ({ g, f: g + 3, c: rel(g + 3, [6, 7, 8, 9]), r: rel(g + 3, [10, 11, 12]) }));
@@ -424,9 +424,7 @@ function ciclo(s) {
   });
   $("t-ciclo").textContent = o ? "Cuando ya se van, pagan más obras" : "Gastan más cuando ya se van";
   $("s-ciclo").textContent = `${o ? "Obras con pagos" : "Millones de soles de 2022"} por mes, ${s.zona}` +
-    (tipo() ? ", gasto total en obras (no hay datos mensuales por tipo)" : "") + `. Con controles por municipalidad, año y mes, ` +
-    `desde 2015 el gasto sube ${pc(R.campana)} en la campaña y ${pc(R.cola)} entre la elección y la salida, ` +
-    `y cae ${pc(R.inicio)} en los primeros 3 meses del nuevo alcalde (todo el Perú).`;
+    (tipo() ? ", gasto total en obras (no hay datos mensuales por tipo)" : "");
   const W = 1000, H = 290, m = { t: 52, r: 58, b: 30, l: 56 }, M12 = d3.range(1, 13);
   const x = d3.scalePoint().domain(M12).range([m.l, W - m.r]).padding(0.4), paso = x.step();
   const y = d3.scaleLinear().domain([0, (d3.max([s.pre, s.fin], a => d3.max(M12, mm => val(a, mm))) || 1) * 1.1]).nice().range([H - m.b, m.t]);
@@ -543,6 +541,7 @@ function mapa(s) {
     return Array.isArray(det) ? det.find(x => x.properties.u === f.properties.u) || f : f;
   });
   const svg = d3.select("#mapa");
+  MAPA.fondos ??= {};
   let g = svg.select("g.z");
   if (g.empty()) {
     g = svg.append("g").attr("class", "z");
@@ -554,9 +553,20 @@ function mapa(s) {
     g.append("path").attr("class", "pais").attr("stroke", "none").attr("fill", "#d5d7da").attr("opacity", 0.3)
       .attr("d", MAPA.path(MAPA.pais));
     g.append("path").attr("class", "fondo").attr("stroke", "none");
-    svg.on("click", e => { if (e.target === svg.node()) subir(); });
+    g.append("path").attr("class", "hov").attr("fill", C.tinta).attr("opacity", 0.18).attr("pointer-events", "none");
+    svg.on("click", e => { if (e.target === svg.node()) subir(); })
+      .on("mouseleave", () => { MAPA.hov = null; g.select("path.hov").attr("d", null); });
   }
   const path = MAPA.path, sel = distrito && feats.find(f => f.properties.u === distrito);
+  // Cada clic baja un nivel: en el Perú se elige el departamento, en él la provincia y en ella el distrito.
+  const n = s.area === "PE" ? 2 : s.area.length + 2, grupo = f => f.properties.u.slice(0, n);
+  const nombre = (k, f) => n === 2 ? D.departamentos[k] : n === 4 ? D.provincias[k] : f.properties.n;
+  const bajar = u => {
+    if (n === 6) return verDistrito(u);
+    if (n === 2) { $("f-dep").value = u.slice(0, 2); provincias(); } else $("f-prov").value = u.slice(0, 4);
+    distrito = null; actualizar();
+  };
+  MAPA.hov = null; g.select("path.hov").attr("d", null);
   const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
   // Vista = [centro x, centro y, alto visible]; el mapa completo es [220, 300, 600].
   const vista = (b, holgura) => { const [[x0, y0], [x1, y1]] = b;
@@ -571,11 +581,16 @@ function mapa(s) {
     .each(function (f) { if (this.__f !== f) { this.__f = f; this.setAttribute("d", path(f)); } })  // solo los que cambian
     .attr("stroke", f => f === sel ? C.tinta : "#fff")
     .attr("stroke-width", f => (f === sel ? 2.5 : dentro(f) && s.area !== "PE" ? 0.8 : 0.3) / k)
-    .on("click", (e, f) => sel ? (f === sel ? null : verDistrito(null)) : dentro(f) ? verDistrito(f.properties.u) : subir())
-    .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
-      verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
+    .on("click", (e, f) => sel ? (f === sel ? null : verDistrito(null)) : dentro(f) ? bajar(f.properties.u) : subir())
+    .on("mousemove", (e, f) => {
+      const k = grupo(f), ok = dentro(f) && !sel;
+      // Sombrea todo el departamento o provincia bajo el cursor (el contorno se calcula una vez).
+      if (MAPA.hov !== (ok ? k : null)) { MAPA.hov = ok ? k : null;
+        g.select("path.hov").attr("d", ok && n < 6 ? (MAPA.fondos["h" + k] ??= path(MAPA.exterior(feats.filter(x => grupo(x) === k)))) : null).raise(); }
+      const d = s.dist.filter(x => x.c.u.startsWith(k)).reduce((t, x) => ({ a: t.a + x.a, b: t.b + x.b }), { a: 0, b: 0 }), hay = dentro(f) && s.dist.some(x => x.c.u.startsWith(k));
+      verTip(e, `<b>${nombre(k, f)}</b>` + (n === 6 ? ` (${f.properties.p})` : "") + "<br>" + (hay
         ? `Jun a dic ${s.pre}: ${fv(d.a)}<br>Jun a dic ${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
-        : "Fuera de la zona elegida") + `<br><i>${sel && f !== sel || !dentro(f) ? "Clic para volver a la vista anterior" : "Clic para ver su gasto año por año"}</i>`); })
+        : "Fuera de la zona elegida") + `<br><i>${sel && f !== sel || !dentro(f) ? "Clic para volver" : n === 6 ? "Clic para ver su gasto año por año" : "Clic para acercarte"}</i>`); })
     .on("mouseleave", ocultarTip);
   const clave = s.area + "|" + (sel ? distrito : "") + "|" + feats.filter(dentro).length;
   if (MAPA.clave !== clave) {  // reordenar y recalcular el fondo solo si cambió la zona
@@ -584,7 +599,7 @@ function mapa(s) {
   // simplificación entre distritos vecinos (se veían como ríos blancos al acercar).
     // Para todo el Perú sirve el contorno del país; el de cada zona se calcula una vez y se guarda.
     const fk = s.area + "|" + feats.filter(dentro).length;
-    MAPA.fondos ??= {};
+
     // Se dibuja al terminar el zoom para no frenar el comienzo de la animación.
     const fondo = () => g.select("path.fondo").attr("fill", "#c9ccd0")
       .attr("d", s.area === "PE" ? path(MAPA.pais) : (MAPA.fondos[fk] ??= path(MAPA.exterior(feats.filter(dentro)))));
@@ -596,9 +611,37 @@ function mapa(s) {
   const tr = v => { const k = 600 / v[2]; return `translate(${220 - k * v[0]},${300 - k * v[1]}) scale(${k})`; };
   // Solo se anima si la cámara cambia de lugar: así una descarga tardía no reinicia el zoom.
   const dur = mueve && DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0;
-  if (mueve) g.interrupt().transition().duration(dur).ease(d3.easeCubicInOut).attrTween("transform", () => t => tr(i(t)));
+  if (mueve) dur ? volar(g, i, dur, tr, 600 / v[2]) : g.attr("transform", tr(v));
   MAPA.clave = clave;
   return dur;
+}
+
+// Mientras la cámara se mueve, el mapa se dibuja en canvas (mover 1,874 polígonos SVG traba la
+// animación). Al terminar vuelve el SVG, que tiene los clics y el tooltip.
+function volar(g, i, dur, tr, kFin) {
+  const svg = $("mapa"), cv = $("mapa-c"), ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1;
+  const W = svg.clientWidth, H = svg.clientHeight, s = Math.min(W / 440, H / 600), ox = (W - 440 * s) / 2, oy = (H - 600 * s) / 2;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const capas = [...g.node().querySelectorAll("path:not(.fondo):not(.hov)")].map(el => {
+    const d = el.getAttribute("d"); if (!d) return null;
+    if (el.__d !== d) { el.__d = d; el.__p = new Path2D(d); }
+    return { p: el.__p, f: el.getAttribute("fill"), st: el.getAttribute("stroke"),
+             o: el.style.opacity !== "" ? +el.style.opacity : +(el.getAttribute("opacity") ?? 1),
+             w: (+el.getAttribute("stroke-width") || 0) * kFin };  // grosor en pantalla
+  }).filter(Boolean);
+  MAPA.timer?.stop();
+  g.style("visibility", "hidden"); cv.style.display = "block";
+  MAPA.timer = d3.timer(ms => {
+    const t = Math.min(1, ms / dur), z = i(d3.easeCubicInOut(t)), k = 600 / z[2];
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    ctx.setTransform(dpr * s * k, 0, 0, dpr * s * k, dpr * (ox + s * (220 - k * z[0])), dpr * (oy + s * (300 - k * z[1])));
+    for (const c of capas) {
+      ctx.globalAlpha = c.o;
+      if (c.f && c.f !== "none") { ctx.fillStyle = c.f; ctx.fill(c.p); }
+      if (c.st && c.st !== "none" && c.w) { ctx.lineWidth = c.w / k; ctx.strokeStyle = c.st; ctx.stroke(c.p); }
+    }
+    if (t === 1) { MAPA.timer.stop(); g.attr("transform", tr(z)).style("visibility", null); cv.style.display = "none"; }
+  });
 }
 
 function abandono(s) {
@@ -648,8 +691,8 @@ function relac() {
 function ranking(s) {
   const o = medida === "o", min = o ? 5 : tipo() ? 0.2 : 0.5, n = v => o ? fmt(v) : v.toFixed(1);
   const top = s.dist.filter(d => d.a >= min).sort((p, q) => q.b / q.a - p.b / p.a).slice(0, 8);
-  $("t-rank").textContent = `Donde más creció el ${o ? "número de obras" : nombreMed()} en la campaña y salida (${s.zona})`;
-  $("s-rank").textContent = `Junio a diciembre. Distritos con al menos ${o ? "5 obras con pagos" : `S/ ${min === 0.5 ? "500" : "200"} mil de ${nombreMed()}`} en esos meses de ${s.pre}`;
+  $("t-rank").textContent = `Donde más creció el ${o ? "número de obras" : nombreMed()} de junio a diciembre (${s.zona})`;
+  $("s-rank").textContent = `Distritos con al menos ${o ? "5 obras con pagos" : `S/ ${min === 0.5 ? "500" : "200"} mil de ${nombreMed()}`} de junio a diciembre de ${s.pre}`;
   $("th1").textContent = `${s.pre} (${o ? "obras" : "S/ mill."})`; $("th4").textContent = `${s.fin} (${o ? "obras" : "S/ mill."})`;
   d3.select("#rank").selectAll("tr").data(top.length ? top : [null]).join("tr")
     .html(d => d ? `<td>${d.c.n}</td><td class="num">${n(d.a)}</td><td class="num">${n(d.b)}</td>` +
