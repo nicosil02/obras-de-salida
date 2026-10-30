@@ -64,7 +64,8 @@
   .chip { margin-bottom: 22px; padding: 10px; border: 1px solid var(--acento); border-radius: 6px; font-size: 13.5px; }
   .chip button { font: inherit; font-size: 13px; margin-top: 6px; padding: 4px 10px; border: 1px solid #c9ccd0; border-radius: 6px;
                  background: var(--papel); cursor: pointer; }
-  #mapa path { cursor: pointer; }
+  #mapa path { cursor: pointer; vector-effect: non-scaling-stroke; }
+  #mapa { overflow: hidden; }
   .porque p b { color: var(--tinta); }
   .texto { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 16px; margin-top: 16px; font-size: 13.5px; color: var(--tinta-2); }
   .texto h2 { font-size: 15px; color: var(--tinta); margin: 0 0 6px; }
@@ -247,7 +248,7 @@ const verbo = (pl = true) => (medida === "o" ? (pl ? "tuvieron" : "tuvo") + " m�
   : (pl ? "gastaron" : "gastó") + " más" + (tipo() ? " en " + nombreMed().slice(9) : ""));
 const cambio = r => r >= 2 ? `${r.toFixed(1)} veces` : `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1))}%`;
 const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
-let D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
+let PROV = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
 
 const tip = $("tip");
 function verTip(e, html) { tip.style.display = "block"; tip.innerHTML = html;
@@ -263,6 +264,7 @@ function contar(id, v, f) {
 
 Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g]) => {
   D = d; M = m; GEO = g;
+  POB = new Map(GEO.features.map(f => [f.properties.u, f.properties.h]));
   // Tamano: tercios del gasto total en obras 2008-2025 de cada distrito.
   const tot = M.columnas.map(c => d3.sum(d3.range(2008, 2026), y => c.g[y - Y0]));
   const q = [d3.quantile(tot, 1 / 3), d3.quantile(tot, 2 / 3)];
@@ -272,14 +274,12 @@ Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).t
   $("paral").textContent = fmt(D.paralizadas);
   d3.select("#f-ges").selectAll("button").data(GESTIONES).join("button").attr("type", "button")
     .html(g => `${g}-${g + 3}<small>elecciones de ${g + 3}</small>`).on("click", (e, g) => { parar(); elegir(g); });
-  // Buscador: "Distrito (Provincia), Departamento" -> ubigeo.
-  const nombres = new Map(M.columnas.map(c => [`${c.n}, ${D.departamentos[c.u.slice(0, 2)]}`, c.u]));
-  $("l-dist").innerHTML = [...nombres.keys()].sort().map(n => `<option value="${n}">`).join("");
+  // Buscador: basta parte del nombre; primero se buscan los distritos de la zona elegida.
   $("f-buscar").addEventListener("change", e => {
-    const u = nombres.get(e.target.value); if (!u) return;
-    $("f-dep").value = u.slice(0, 2); provincias(); $("f-prov").value = u.slice(0, 4);
-    distrito = u; e.target.value = ""; actualizar();
-    $("anual").scrollIntoView({ behavior: "smooth", block: "center" });
+    const u = buscar(e.target.value);
+    e.target.value = "";
+    e.target.placeholder = u ? "Escribe su nombre" : "No encontré ese distrito";
+    if (u) verDistrito(u);
   });
   provincias();
   $("f-dep").addEventListener("change", () => { distrito = null; provincias(); actualizar(); });
@@ -303,11 +303,29 @@ function recorrer() {
 }
 function provincias() {
   const dep = $("f-dep").value;
+  // Sugerencias del buscador: primero los distritos del departamento elegido.
+  $("l-dist").innerHTML = M.columnas.map(c => [dep !== "PE" && c.u.slice(0, 2) === dep ? 0 : 1, `${c.n}, ${D.departamentos[c.u.slice(0, 2)]}`])
+    .sort((a, b) => a[0] - b[0] || a[1].localeCompare(b[1])).map(d => `<option value="${d[1]}">`).join("");
   $("f-prov").disabled = dep === "PE";
   $("f-prov").innerHTML = `<option value="">Todas las provincias</option>` + Object.entries(D.provincias)
     .filter(([k]) => k.slice(0, 2) === dep).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
 }
-function verDistrito(u) { distrito = distrito === u ? null : u; actualizar(); }
+// Elegir un distrito lleva a su provincia; sin distrito se vuelve a la provincia.
+function verDistrito(u) {
+  if (u) { $("f-dep").value = u.slice(0, 2); provincias(); $("f-prov").value = u.slice(0, 4); }
+  distrito = u; actualizar();
+}
+const plano = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[(),]/g, " ").trim();
+function buscar(q) {
+  const ts = plano(q).split(/\s+/).filter(Boolean); if (!ts.length) return null;
+  const area = $("f-prov").value || $("f-dep").value;
+  const c = M.columnas.map(c => ({ u: c.u, n: plano(c.n.split(" (")[0]), todo: plano(`${c.n} ${D.departamentos[c.u.slice(0, 2)]}`), g: POB.get(c.u) || 0 }))
+    .filter(x => ts.every(t => x.todo.includes(t)))
+    .sort((p, q) => d3.ascending(!(area === "PE" || p.u.startsWith(area)), !(area === "PE" || q.u.startsWith(area)))
+      || d3.ascending(p.n !== ts.join(" "), q.n !== ts.join(" ")) || d3.ascending(!p.n.startsWith(ts[0]), !q.n.startsWith(ts[0]))
+      || d3.ascending(p.n.length, q.n.length) || d3.descending(p.g, q.g));  // con nombres iguales, el más poblado
+  return c.length ? c[0].u : null;
+}
 
 function estado() {
   const dep = $("f-dep").value, tam = $("f-tam").value, area = $("f-prov").value || dep;
@@ -328,7 +346,7 @@ function actualizar() {
   $("chip").hidden = !s.sel;
   if (s.sel) {
     $("chip").innerHTML = `Viendo <b>${s.sel.n}</b><br><button type="button" id="quitar">Ver todos los distritos</button>`;
-    $("quitar").onclick = () => verDistrito(distrito);
+    $("quitar").onclick = () => verDistrito(null);
   }
   kpis(s); anual(s, f); mapa(s); abandono(s); relac(); ranking(s);
 }
@@ -407,21 +425,46 @@ function anual(s, f) {
 function mapa(s) {
   $("t-mapa").textContent = `¿Qué distritos ${verbo()} en ${s.fin} que en ${ini}?`;
   const r = new Map(s.dist.map(d => [d.c.u, d]));
-  const feats = GEO.features.filter(f => s.area === "PE" || f.properties.u.startsWith(s.area));
+  // En una provincia se usa su mapa detallado (se carga una vez y se guarda).
+  let base = GEO.features;
+  if (s.area.length === 4) {
+    if (!PROV[s.area]) {
+      PROV[s.area] = "cargando";
+      fetch(`prov/${s.area}.json`).then(r => r.json()).then(j => { PROV[s.area] = j.features; actualizar(); });
+    }
+    if (Array.isArray(PROV[s.area])) base = PROV[s.area];
+  }
+  const feats = base.filter(f => s.area === "PE" || f.properties.u.startsWith(s.area));
   const proj = d3.geoMercator().fitExtent([[6, 6], [434, 594]], { type: "FeatureCollection", features: feats });
   const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
-  const ps = d3.select("#mapa").selectAll("path").data(feats, f => f.properties.u).join("path")
-    .attr("d", d3.geoPath(proj))
-    .attr("stroke", f => f.properties.u === distrito ? C.tinta : "#fff")
-    .attr("stroke-width", f => f.properties.u === distrito ? 2 : s.area === "PE" ? 0.2 : 0.5)
-    .on("click", (e, f) => verDistrito(f.properties.u))
+  const svg = d3.select("#mapa"), path = d3.geoPath(proj);
+  let g = svg.select("g.z");
+  if (g.empty()) {
+    g = svg.append("g").attr("class", "z");
+    // Clic fuera del distrito elegido: vuelve a la provincia.
+    svg.on("click", e => { if (distrito && e.target === svg.node()) verDistrito(null); });
+  }
+  const sel = distrito && feats.find(f => f.properties.u === distrito);
+  const ps = g.selectAll("path").data(feats, f => f.properties.u).join("path")
+    .attr("d", path)
+    .attr("stroke", f => f === sel ? C.tinta : "#fff")
+    .attr("stroke-width", f => f === sel ? 2.5 : s.area === "PE" ? 0.3 : 0.8)
+    .on("click", (e, f) => verDistrito(distrito ? (f === sel ? distrito : null) : f.properties.u))
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
         ? `${ini}: ${fv(d.a)}<br>${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
-        : "Sin datos para este filtro") + "<br><i>Clic para ver su gasto año por año</i>"); })
+        : "Sin datos para este filtro") + `<br><i>${distrito ? "Clic fuera del distrito para volver a la provincia" : "Clic para ver su gasto año por año"}</i>`); })
     .on("mouseleave", ocultarTip);
-  ps.filter(f => f.properties.u === distrito).raise();
-  ps.transition().duration(DUR).attr("fill", f => color(r.get(f.properties.u)));
+  ps.filter(f => f === sel).raise();
+  ps.transition().duration(DUR).attr("fill", f => color(r.get(f.properties.u)))
+    .style("opacity", f => !sel || f === sel ? 1 : 0.4);
+  // Acercamiento suave al distrito elegido; los vecinos quedan atenuados alrededor.
+  let t = "translate(0,0) scale(1)";
+  if (sel) {
+    const [[x0, y0], [x1, y1]] = path.bounds(sel), k = Math.max(1, Math.min(3, 0.45 * Math.min(440 / (x1 - x0), 600 / (y1 - y0))));
+    t = `translate(${220 - k * (x0 + x1) / 2},${300 - k * (y0 + y1) / 2}) scale(${k})`;
+  }
+  g.transition().duration(DUR * 1.4).attr("transform", t);
 }
 
 function abandono(s) {

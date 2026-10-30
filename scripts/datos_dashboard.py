@@ -153,6 +153,10 @@ def relaciones(d):
             for g, x in t.iterrows()]
 
 
+POB = {r["UBIGEO"]: r["POBTOTAL"] or 0 for r in __import__("shapefile").Reader(
+    str(ORIG / "limites" / "DISTRITOS_inei.shp"), encoding="utf-8").records()}
+
+
 def distritos():
     """Geojson liviano para el mapa: ubigeo, nombres y coordenadas con 3 decimales (~100 m)."""
     geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
@@ -160,10 +164,28 @@ def distritos():
     geo["features"] = [f for f in geo["features"] if f["geometry"]]  # algunos vienen sin geometria
     for f in geo["features"]:
         pr = f["properties"]
-        f["properties"] = {"u": pr["IDDIST"], "n": pr["NOMBDIST"].title(), "p": pr["NOMBPROV"].title()}
+        f["properties"] = {"u": pr["IDDIST"], "n": pr["NOMBDIST"].title(), "p": pr["NOMBPROV"].title(),
+                           "h": int(POB.get(pr["IDDIST"], 0))}  # poblacion INEI, para desempatar en el buscador
         f["geometry"]["coordinates"] = redondear(f["geometry"]["coordinates"])
     geo.pop("crs", None)
     (DOCS / "distritos.geojson").write_text(json.dumps(geo, separators=(",", ":")), encoding="utf-8")
+    # Un mapa detallado (~30 m) por provincia, que el dashboard carga al elegirla.
+    import shapefile  # pyshp
+    from shapely.geometry import mapping, shape
+    prov = {}
+    for sr in shapefile.Reader(str(ORIG / "limites" / "DISTRITOS_inei.shp"), encoding="utf-8").iterShapeRecords():
+        u = sr.record["UBIGEO"]
+        g = mapping(shape(sr.shape.__geo_interface__).simplify(0.0003, preserve_topology=True))
+        prov.setdefault(u[:4], []).append({"type": "Feature", "geometry": {"type": g["type"], "coordinates": redondear4(g["coordinates"])},
+                                            "properties": {"u": u, "n": sr.record["NOMBDIST"].title(), "p": sr.record["NOMBPROV"].title()}})
+    (DOCS / "prov").mkdir(exist_ok=True)
+    for k, v in prov.items():
+        (DOCS / "prov" / f"{k}.json").write_text(json.dumps({"type": "FeatureCollection", "features": v}, separators=(",", ":")),
+                                                 encoding="utf-8")
+
+
+def redondear4(c):
+    return [redondear4(x) for x in c] if isinstance(c[0], (list, tuple)) else [round(c[0], 4), round(c[1], 4)]
 
 
 MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"]
