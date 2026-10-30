@@ -54,15 +54,19 @@ def mapa3d(m, d, inv, cen):
     # Obras distintas con pagos en el anio (no la suma de los meses).
     p = A.pagos()
     p["UBIGEO"] = p["UBIGEO"].where(p["UBIGEO"].str[-2:] != "00", p["UBIGEO"].str[:4] + "01")
-    p = p[p["t"] // 12 >= 2008]
+    p = p[p["t"] // 12 >= 2007]
     obras = p.groupby(["UBIGEO", p["t"] // 12])["obra"].nunique()
     gasto = p.groupby(["UBIGEO", p["t"] // 12])["DEVENGADO"].sum() / 1e6
-    anios = list(range(2008, 2027))
+    anios = list(range(2007, 2027))
+    # 2007 esta incompleto: solo cuentan las municipalidades que ya reportaban en enero.
+    g7 = pd.read_parquet(PROC / "gasto" / "gasto_municipal_2007.parquet")
+    u7 = g7.loc[(g7["MES"].astype(int) == 1) & (g7["DEVENGADO"] > 0), "UBIGEO"]
+    enero07 = set(u7.where(u7.str[-2:] != "00", u7.str[:4] + "01"))
     col = []
     for u in sorted(set(obras.index.get_level_values(0)) & set(cen.index)):
         col.append({"u": u, "n": cen.at[u, "nombre"], "x": round(cen.at[u, "lon"], 3), "y": round(cen.at[u, "lat"], 3),
                     "g": [round(float(gasto.get((u, a), 0)), 2) for a in anios],
-                    "o": [int(obras.get((u, a), 0)) for a in anios]})
+                    "o": [int(obras.get((u, a), 0)) for a in anios], "e7": int(u in enero07)})
     # Obras inconclusas abandonadas en cada cambio de alcalde, con sus coordenadas; las que
     # no tienen coordenadas van al centro de su distrito con un desplazamiento aleatorio.
     ab = d[d["transicion"] & d["abandonada"].astype(bool)].copy()

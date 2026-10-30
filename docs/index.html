@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Obras de salida · Dashboard del gasto municipal en obras y el cambio de alcalde, Perú 2008–2026</title>
+<title>Obras de salida · Dashboard del gasto municipal en obras y el cambio de alcalde, Perú 2007–2026</title>
 <meta name="description" content="Los alcaldes del Perú gastan más en obras en su último año y, cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.">
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <style>
@@ -100,8 +100,8 @@
     <div class="ctrl"><label for="f-anio">Año</label>
       <div class="anio-grande" id="a-grande"></div>
       <div class="etapa" id="a-etapa"></div>
-      <input id="f-anio" type="range" min="2008" max="2026" step="1" value="2022" aria-label="Año">
-      <div class="fila-play"><button id="play" type="button">▶ Recorrer</button><span>2008 → 2026</span></div>
+      <input id="f-anio" type="range" min="2007" max="2026" step="1" value="2022" aria-label="Año">
+      <div class="fila-play"><button id="play" type="button">▶ Recorrer</button><span>2007 → 2026</span></div>
     </div>
     <div class="ley-lat">
       <span><i style="background:#d4541c"></i>año de elección municipal</span>
@@ -133,7 +133,7 @@
       <div class="panel s7">
         <h3>El latido: sube hasta la elección, cae con el nuevo alcalde</h3>
         <div class="sub">S/ de cada 100 de la gestión pagados en cada año · parejo = S/ 25 · haz clic en un año</div>
-        <svg id="latido" viewBox="0 0 640 230" role="img" aria-label="Reparto del gasto por año 2008 a 2025"></svg>
+        <svg id="latido" viewBox="0 0 640 230" role="img" aria-label="Reparto del gasto por año 2007 a 2025"></svg>
       </div>
       <div class="panel s7">
         <h3>Gasto municipal en obras por año</h3>
@@ -185,8 +185,8 @@
         <li><b>Sin reelección el patrón se marca más</b>, y cuando gana otro partido el abandono sube entre 3 y 9 puntos.</li>
       </ol></div>
       <div class="panel"><h3>Metodología</h3><ul>
-        <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2008–2026.</li>
-        <li><b>Reparto.</b> Gasto de cada año como parte de lo pagado en la gestión de 4 años (parejo = 25). En 2007–2010 y 2023–2026 se usa el promedio de los años disponibles.</li>
+        <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2007–2026.</li>
+        <li><b>Reparto.</b> Gasto de cada año como parte de lo pagado en la gestión de 4 años (parejo = 25). En 2023–2026 se usa el promedio de los años disponibles.</li>
         <li><b>Abandono.</b> Obras con pagos en los 6 meses previos al 1 de enero, con menos de 80% de su costo pagado y sin pagos en los 24 meses siguientes.</li>
         <li>Una regresión con efectos fijos confirma el patrón (detalle en el repositorio).</li>
       </ul></div>
@@ -199,7 +199,7 @@
       <div class="panel"><h3>Limitaciones</h3><ul>
         <li>Muestra asociación, no causalidad.</li>
         <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
-        <li>2007 tiene pocas municipalidades en el SIAF y 2026 llega hasta septiembre.</li>
+        <li>En 2007 muchas municipalidades entraron al SIAF a mitad de año. El reparto de 2007–2010 usa solo las 1,176 que reportaban desde enero. 2026 llega hasta septiembre.</li>
       </ul></div>
     </div>
   </div>
@@ -211,18 +211,20 @@ const $ = id => document.getElementById(id);
 const fmt = n => Math.round(n).toLocaleString("es-PE");
 const C = { naranja: "#d4541c", azul: "#2a78d6", gris: "#d9d5cc", vacio: "#f1ede4" };
 const ELEC = new Set([2010, 2014, 2018, 2022, 2026]);
-const ANIOS = d3.range(2008, 2027);             // datos de gasto
-const CON_INDICE = d3.range(2008, 2026);        // 2026 esta incompleto
+const Y0 = 2007, ANIOS = d3.range(Y0, 2027);   // datos de gasto
+const CON_INDICE = d3.range(Y0, 2026);         // 2026 esta incompleto
 let D, M, GEO, tercio, timer = null, ultimaGestion = null;
 
 const gestionDe = y => 2007 + 4 * Math.floor((y - 2007) / 4);
-const disponibles = ini => d3.range(Math.max(ini, 2008), Math.min(ini + 3, 2025) + 1);
+// 2007 solo cuenta para las municipalidades que ya reportaban en enero (e7).
+const disponibles = (ini, c) => d3.range(ini === Y0 && c && !c.e7 ? Y0 + 1 : ini, Math.min(ini + 3, 2025) + 1);
+const gas = (c, y) => c.g[y - Y0];
 const etapa = y => ELEC.has(y) ? "año 4 · elección" : y === gestionDe(y) ? "año 1 · entra el alcalde" : `año ${y - gestionDe(y) + 1} de la gestión`;
 
 Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g]) => {
   D = d; M = m; GEO = g;
   // Tamano: tercios del gasto total en obras 2008-2025 de cada distrito.
-  const tot = M.columnas.map(c => d3.sum(c.g.slice(0, 18)));
+  const tot = M.columnas.map(c => d3.sum(d3.range(2008, 2026), y => gas(c, y)));
   const q = [d3.quantile(tot, 1 / 3), d3.quantile(tot, 2 / 3)];
   tercio = new Map(M.columnas.map((c, i) => [c.u, tot[i] <= q[0] ? "1" : tot[i] <= q[1] ? "2" : "3"]));
   $("f-dep").innerHTML = `<option value="PE">Todo el Perú</option>` +
@@ -239,9 +241,9 @@ function irA(y) { parar(); $("f-anio").value = y; actualizar(false); }
 function parar() { clearInterval(timer); timer = null; $("play").textContent = "▶ Recorrer"; }
 function recorrer() {
   $("play").textContent = "❚❚ Pausa";
-  if (+$("f-anio").value >= 2026) $("f-anio").value = 2007;
+  if (+$("f-anio").value >= 2026) { $("f-anio").value = Y0; actualizar(false); }
   const paso = () => { const y = +$("f-anio").value + 1; if (y > 2026) return parar(); $("f-anio").value = y; actualizar(false); };
-  paso(); timer = setInterval(paso, 1600);
+  timer = setInterval(paso, 1600);
 }
 
 function estado() {
@@ -253,15 +255,16 @@ function estado() {
 // Indice "S/ de cada 100": 25 x gasto del anio / promedio anual de la gestion (anios disponibles).
 function indiceZona(cols, y) {
   if (!CON_INDICE.includes(y)) return null;
-  const anios = disponibles(gestionDe(y)), suma = a => d3.sum(cols, c => c.g[a - 2008]);
+  if (gestionDe(y) === Y0) cols = cols.filter(c => c.e7);
+  const anios = disponibles(gestionDe(y)), suma = a => d3.sum(cols, c => gas(c, a));
   return 25 * suma(y) / d3.mean(anios, suma);
 }
 function indiceDistritos(cols, y) {
   const r = new Map(); if (!CON_INDICE.includes(y)) return r;
-  const anios = disponibles(gestionDe(y));
   for (const c of cols) {
-    const m = d3.mean(anios, a => c.g[a - 2008]);
-    if (m * anios.length > 0.5) r.set(c.u, { v: 25 * c.g[y - 2008] / m, tot: m * anios.length, g: c.g[y - 2008], n: c.n });
+    const anios = disponibles(gestionDe(y), c); if (!anios.includes(y)) continue;
+    const m = d3.mean(anios, a => gas(c, a));
+    if (m * anios.length > 0.5) r.set(c.u, { v: 25 * gas(c, y) / m, tot: m * anios.length, g: gas(c, y), n: c.n });
   }
   return r;
 }
@@ -285,9 +288,10 @@ function kpis(s) {
   const t = a.find(x => x.anio === T), p = a.find(x => x.anio === T - 2);
   $("k3").textContent = t ? Math.round(t.pct) + "%" : "s/d";
   $("k3l").textContent = t ? `de las obras a medias sin pagos tras el cambio de alcalde de ${T} (${fmt(t.abandonadas)} obras). Sin cambio, ${T - 2}: ${p ? Math.round(p.pct) : "s/d"}%` : "";
-  const g = d3.sum(s.cols, c => c.g[s.y - 2008]), g0 = s.y > 2008 ? d3.sum(s.cols, c => c.g[s.y - 2009]) : null;
-  $("k4").textContent = "S/ " + fmt(g) + " mill.";
-  $("k4l").textContent = s.y === 2026 ? "enero a septiembre de 2026" : g0 ? `${g >= g0 ? "+" : ""}${Math.round(100 * (g / g0 - 1))}% frente a ${s.y - 1} · ${s.zona}` : s.zona;
+  const ga = d3.sum(s.cols, c => gas(c, s.y)), g0 = s.y > Y0 ? d3.sum(s.cols, c => gas(c, s.y - 1)) : null;
+  $("k4").textContent = "S/ " + fmt(ga) + " mill.";
+  $("k4l").textContent = s.y === 2026 ? "enero a septiembre de 2026" : s.y === Y0 ? "muchas municipalidades entraron al SIAF a mitad de 2007"
+    : `${ga >= g0 ? "+" : ""}${Math.round(100 * (ga / g0 - 1))}% frente a ${s.y - 1} · ${s.zona}`;
 }
 
 function mapa(s) {
@@ -317,16 +321,16 @@ function latido(s) {
   const v = CON_INDICE.map(y => [y, indiceZona(s.cols, y)]);
   const svg = d3.select("#latido"); svg.selectAll("*").remove();
   const x = d3.scalePoint().domain(CON_INDICE).range([34, 620]);
-  const y = d3.scaleLinear().domain([Math.min(12, d3.min(v, d => d[1]) - 2), Math.max(38, d3.max(v, d => d[1]) + 3)]).range([185, 22]);
+  const y = d3.scaleLinear().domain([Math.min(12, d3.min(v, d => d[1]) - 6), Math.max(38, d3.max(v, d => d[1]) + 3)]).range([185, 22]);
   [2011, 2015, 2019, 2023].forEach(g => svg.append("line").attr("x1", x(g) - x.step() / 2).attr("x2", x(g) - x.step() / 2)
     .attr("y1", 14).attr("y2", 192).attr("stroke", "#e6e0d4"));
-  const g0 = Math.max(s.ini, 2008), g1 = Math.min(s.ini + 3, 2025);
-  svg.append("rect").attr("x", x(g0) - x.step() / 2).attr("width", x.step() * (g1 - g0 + 1)).attr("y", 14).attr("height", 178)
+  const g1 = Math.min(s.ini + 3, 2025);
+  svg.append("rect").attr("x", x(s.ini) - x.step() / 2).attr("width", x.step() * (g1 - s.ini + 1)).attr("y", 14).attr("height", 178)
     .attr("fill", "#f7f0e3");
   svg.append("line").attr("x1", 20).attr("x2", 630).attr("y1", y(25)).attr("y2", y(25)).attr("stroke", "#1d1d1b")
     .attr("stroke-dasharray", "4 5").attr("opacity", .35);
   svg.append("text").attr("x", 22).attr("y", y(25) - 5).attr("font-size", 11).attr("fill", "#8a867c").text("parejo");
-  [[2008, 2010], [2011, 2014], [2015, 2018], [2019, 2022], [2023, 2025]].forEach(([a, b]) =>
+  [[2007, 2010], [2011, 2014], [2015, 2018], [2019, 2022], [2023, 2025]].forEach(([a, b]) =>
     svg.append("path").datum(v.filter(d => d[0] >= a && d[0] <= b)).attr("fill", "none").attr("stroke", "#1d1d1b")
       .attr("stroke-width", 2.5).attr("d", d3.line(d => x(d[0]), d => y(d[1]))));
   svg.selectAll("circle").data(v).join("circle").attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
@@ -344,7 +348,7 @@ function latido(s) {
 }
 
 function anual(s) {
-  const v = ANIOS.map(y => [y, d3.sum(s.cols, c => c.g[y - 2008])]);
+  const v = ANIOS.map(y => [y, d3.sum(s.cols, c => gas(c, y))]);
   const svg = d3.select("#anual"); svg.selectAll("*").remove();
   const x = d3.scaleBand().domain(ANIOS).range([46, 630]).padding(0.22), y = d3.scaleLinear().domain([0, d3.max(v, d => d[1])]).nice().range([170, 12]);
   svg.append("g").attr("transform", "translate(46,0)").call(d3.axisLeft(y).ticks(4).tickSize(-584).tickFormat(d => fmt(d)))
@@ -352,13 +356,13 @@ function anual(s) {
     .call(g => g.selectAll("text").attr("fill", "#8a867c").attr("font-size", 10));
   svg.selectAll("rect.b").data(v).join("rect").attr("class", "b").attr("x", d => x(d[0])).attr("width", x.bandwidth())
     .attr("y", d => y(d[1])).attr("height", d => 170 - y(d[1])).attr("rx", 3)
-    .attr("fill", d => ELEC.has(d[0]) ? C.naranja : C.azul).attr("opacity", d => d[0] === s.y ? 1 : d[0] === 2026 ? .3 : .55)
+    .attr("fill", d => ELEC.has(d[0]) ? C.naranja : C.azul).attr("opacity", d => d[0] === s.y ? 1 : d[0] === 2026 || d[0] === Y0 ? .3 : .55)
     .attr("stroke", d => d[0] === s.y ? "#1d1d1b" : null).attr("stroke-width", 2).style("cursor", "pointer")
-    .on("click", (e, d) => irA(d[0])).append("title").text(d => `${d[0]}: S/ ${fmt(d[1])} millones${d[0] === 2026 ? " (hasta septiembre)" : ""}`);
+    .on("click", (e, d) => irA(d[0])).append("title").text(d => `${d[0]}: S/ ${fmt(d[1])} millones${d[0] === 2026 ? " (hasta septiembre)" : d[0] === Y0 ? " (no todas las municipalidades reportaban)" : ""}`);
   svg.selectAll(".ax").data(ANIOS).join("text").attr("class", "ax").attr("x", d => x(d) + x.bandwidth() / 2).attr("y", 186)
     .attr("text-anchor", "middle").attr("font-size", 11).attr("font-weight", d => d === s.y || ELEC.has(d) ? 800 : 400)
     .attr("fill", d => d === s.y ? "#1d1d1b" : ELEC.has(d) ? C.naranja : "#8a867c").text(d => "'" + String(d).slice(2));
-  svg.append("text").attr("x", 630).attr("y", 199).attr("text-anchor", "end").attr("font-size", 10).attr("fill", "#8a867c").text("2026 hasta septiembre");
+  svg.append("text").attr("x", 630).attr("y", 199).attr("text-anchor", "end").attr("font-size", 10).attr("fill", "#8a867c").text("2007 incompleto · 2026 hasta septiembre");
 }
 
 function alcancia(s, animar) {
@@ -374,7 +378,7 @@ function alcancia(s, animar) {
       const iz = indiceZona(s.cols, a), g = svg.append("g").attr("class", "pila").datum(a);
       if (iz == null) {
         g.append("text").attr("x", x(j)).attr("y", base - 20).attr("text-anchor", "middle").attr("font-size", 12).attr("fill", "#8a867c")
-          .text(a < 2008 ? "sin datos" : "en curso");
+          .text("en curso");
       } else {
         const n = Math.round(iz), col = ELEC.has(a) ? ["#e8743f", "#b8441a"] : ["#f0c44c", "#c99a1e"];
         g.selectAll("ellipse").data(d3.range(n)).join("ellipse").attr("cx", x(j)).attr("rx", 30).attr("ry", 7.5)
@@ -388,7 +392,7 @@ function alcancia(s, animar) {
       g.append("text").attr("x", x(j)).attr("y", base + 42).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", "#8a867c")
         .text(ELEC.has(a) ? "elección" : j === 0 ? "entra" : `año ${j + 1}`);
       g.append("rect").attr("x", x(j) - 44).attr("width", 88).attr("y", 6).attr("height", base + 44).attr("fill", "transparent")
-        .style("cursor", "pointer").on("click", () => irA(Math.max(2008, a)));
+        .style("cursor", "pointer").on("click", () => irA(a));
     });
   }
   svg.selectAll(".pila .etq").attr("font-weight", a => a === s.y ? 800 : 400).attr("fill", a => a === s.y ? "#1d1d1b" : "#55524b")
