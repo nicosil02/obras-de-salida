@@ -1,22 +1,22 @@
 {
   "titulo": "Obras de salida",
-  "fuente": "reel/informe.md (MEF, ONPE, JNE)",
+  "fuente": "reel/informe.md (MEF, BCRP, ONPE, JNE)",
   "escenas": [
     {
-      "frase": "Calles cerradas. Pistas levantadas. Veredas nuevas. Cada cuatro años, justo antes de las elecciones, pasa lo mismo.",
-      "subtitulo": "Calles cerradas. Pistas levantadas. Veredas nuevas. Cada cuatro años, justo antes de las elecciones, pasa lo mismo.",
+      "frase": "Calles cerradas. Pistas levantadas. Veredas nuevas. Cada cuatro años, alrededor de las elecciones, pasa lo mismo.",
+      "subtitulo": "Calles cerradas. Pistas levantadas. Veredas nuevas. Cada cuatro años, alrededor de las elecciones, pasa lo mismo.",
       "cifra": "",
       "etiqueta": "",
       "imagen": "cortes rápidos de obras reales en calles",
       "credito": "por definir"
     },
     {
-      "frase": "Crucé veinte años de gasto en obras de todas las municipalidades del Perú con cada elección municipal. En su último año, los alcaldes gastan sesenta y uno por ciento más en obras que en el primero.",
-      "subtitulo": "Crucé 20 años de gasto en obras de todas las municipalidades del Perú con cada elección municipal. En su último año, los alcaldes gastan 61% más en obras que en el primero.",
-      "cifra": "+61%",
-      "etiqueta": "Gasto en obras, 2022 frente a 2019",
-      "imagen": "gráfico anual 2007-2026 con los años de elecciones en naranja",
-      "credito": "MEF, gasto devengado 2007-2026; ONPE y JNE, elecciones 2006-2022"
+      "frase": "Crucé veinte años de gasto en obras de todas las municipalidades con cada elección. Desde que no pueden reelegirse, entre la elección y su salida los alcaldes gastan treinta y siete por ciento más en obras que en esos meses de otros años.",
+      "subtitulo": "Crucé 20 años de gasto en obras de todas las municipalidades con cada elección. Desde que no pueden reelegirse, entre la elección y su salida los alcaldes gastan 37% más en obras que en esos meses de otros años.",
+      "cifra": "37%",
+      "etiqueta": "más gasto en obras de octubre a diciembre del año de elecciones (2015-2026, soles de 2022)",
+      "imagen": "gráfico mes a mes del dashboard, 2022 frente a 2021, con la salida marcada",
+      "credito": "MEF, gasto devengado 2007-2026; BCRP, IPC; ONPE y JNE"
     },
     {
       "frase": "¿Y a dónde va ese gasto? Sobre todo, a lo que se ve.",
@@ -27,10 +27,10 @@
       "credito": "por definir"
     },
     {
-      "frase": "En la última gestión, el gasto en estadios y losas casi se triplicó. El de agua y desagüe, que va bajo tierra, subió apenas diez por ciento.",
-      "subtitulo": "En la última gestión, el gasto en estadios y losas casi se triplicó. El de agua y desagüe, que va bajo tierra, subió apenas 10%.",
-      "cifra": "2.9 veces",
-      "etiqueta": "Cultura y deporte, 2022 frente a 2019 (agua y desagüe +10%)",
+      "frase": "En 2022, de junio a diciembre, el gasto en estadios y losas fue dos veces y media el del año anterior. El de agua y desagüe, que va bajo tierra, subió apenas siete por ciento.",
+      "subtitulo": "En 2022, de junio a diciembre, el gasto en estadios y losas fue 2.5 veces el del año anterior. El de agua y desagüe, que va bajo tierra, subió apenas 7%.",
+      "cifra": "2.5 veces",
+      "etiqueta": "Cultura y deporte, junio a diciembre de 2022 frente a 2021 (agua y desagüe +7%)",
       "imagen": "dos barras que crecen, estadios y losas frente a agua y desagüe",
       "credito": "MEF, gasto por función"
     },

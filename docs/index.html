@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Obras de salida. Gasto municipal en obras y cambio de alcalde, Perú 2007-2026</title>
-<meta name="description" content="En su último año, los alcaldes del Perú gastan 61% más en obras que en su primero. Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.">
+<meta name="description" content="Desde que no pueden reelegirse, los alcaldes del Perú gastan 37% más en obras entre la elección y su salida. Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
@@ -86,8 +86,8 @@
 <body>
 <header>
   <h1>Obras de salida</h1>
-  <p>En su último año, <b>los alcaldes gastan 61% más en obras que en su primero</b>. Cuando se van,
-    <b>3 de cada 10 obras a medias se quedan sin pagar</b>.</p>
+  <p>Desde que no pueden reelegirse, <b>los alcaldes gastan 37% más en obras entre la elección y su salida</b>
+    que en los mismos meses de otros años. Cuando se van, <b>3 de cada 10 obras a medias se quedan sin pagar</b>.</p>
 </header>
 
 <div class="app">
@@ -135,6 +135,15 @@
     </div>
 
     <section class="panel" style="margin-top:16px">
+      <h2 id="t-ciclo"></h2>
+      <p class="sub" id="s-ciclo"></p>
+      <svg id="ciclo" viewBox="0 0 1000 290" role="img" aria-label="Gasto mensual en obras en el año de elecciones frente al año anterior"></svg>
+      <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
+        <span><i style="background:var(--barra)"></i>Año anterior</span>
+        <span>Las elecciones municipales son a inicios de octubre y el nuevo alcalde entra el 1 de enero.</span></div>
+    </section>
+
+    <section class="panel" style="margin-top:16px">
       <h2 id="t-anual"></h2>
       <p class="sub" id="s-anual"></p>
       <svg id="anual" viewBox="0 0 1000 300" role="img" aria-label="Gasto municipal en obras por año, 2007 a 2026"></svg>
@@ -146,7 +155,7 @@
     <div class="fila f-mapa">
       <section class="panel">
         <h2 id="t-mapa"></h2>
-        <p class="sub">Último año de la gestión frente al primero. Haz clic en un distrito para ver su gasto año por año, y en el fondo blanco para volver a la vista anterior.</p>
+        <p class="sub">Junio a diciembre del año de elecciones frente a los mismos meses del año anterior, en soles de 2022. Haz clic en un distrito para verlo y en el fondo para volver a la vista anterior.</p>
         <svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos según cuánto cambió su gasto"></svg>
         <div class="ley"><span><i style="background:var(--acento)"></i>Más del doble</span>
           <span><i style="background:var(--acento-claro)"></i>Más, pero menos del doble</span>
@@ -179,28 +188,29 @@
         <h2 style="margin-bottom:10px">¿Por qué pasa?</h2>
         <div class="cols"><p>En el Perú los partidos son débiles y la política local gira en torno a la persona del alcalde.
           Hasta 2014 podía reelegirse y le convenía <b>empezar obras antes de votar</b> para mostrarlas en campaña.</p>
-        <p>Desde 2015 no puede reelegirse. Como sabe que se va, <b>acelera los pagos en su último año</b>.
+        <p>Desde 2015 no puede reelegirse. Como sabe que se va, <b>acelera los pagos entre la elección y su salida</b>.
           El que llega no tiene por qué terminar las obras de otro, menos aún si es de otro partido.</p>
-        <p>Por eso importa mirar el ciclo completo del alcalde y no solo el mes de diciembre, cuando todas las
+        <p>Por eso cada mes se compara con el mismo mes de otro año, porque en diciembre todas las
           entidades del Estado gastan más por el cierre del año fiscal.</p></div>
       </section>
     </div>
 
     <div class="texto" id="metodo">
       <div><h2>Hallazgos</h2><ol>
-        <li><b>El último año es el de más gasto.</b> En la gestión 2019-2022 las municipalidades pagaron S/ 12,616 millones en obras en su primer año y S/ 20,292 millones en el último (61% más). Pasa en las cuatro gestiones medidas.</li>
-        <li><b>Pasa en 7 de cada 10 distritos.</b> El 70% gastó más en 2022 que en 2019.</li>
+        <li><b>Gastan más cuando ya se van.</b> Desde 2015, cuando se prohibió la reelección inmediata, el gasto en obras sube 18% en los meses de campaña (junio a setiembre) y 37% entre la elección y la salida del alcalde (octubre a diciembre), frente a los mismos meses de otros años. Antes de 2015 casi no había ese salto final.</li>
+        <li><b>En 2022 pasó en 6 de cada 10 distritos.</b> De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (en soles de 2022).</li>
         <li><b>Al cambiar de alcalde, entre 28% y 32% de las obras a medias se queda sin pagos</b>, frente a 18% a 22% en años sin cambio.</li>
-        <li><b>Crecen más las obras que se ven.</b> En el último año el gasto en cultura y deporte (estadios, losas) se multiplica por 2.1, 2.1 y 2.9 en las gestiones 2011-2014, 2015-2018 y 2019-2022. El de agua y desagüe sube 60%, 20% y 10%. No es solo más plata: el número de obras con pagos también sube (+13%, +22% y +39%).</li>
+        <li><b>Crecen más las obras que se ven.</b> De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) fue 2.5 veces el de los mismos meses de 2021, y en 2018, 1.9 veces. El de agua y desagüe subió 7% en 2022 y bajó 17% en 2018.</li>
         <li><b>Importa quién entra.</b> Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28.4%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).</li>
       </ol></div>
       <div><h2>Cómo se calculó</h2><ul>
         <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2007-2026.</li>
-        <li><b>Gasto del último año frente al primero.</b> Se compara el año de elecciones con el año en que entró el alcalde.</li>
+        <li><b>Soles de 2022.</b> Todo el gasto se corrige por inflación con el IPC de Lima del BCRP.</li>
+        <li><b>Meses de campaña y salida.</b> Se compara junio a diciembre del año de elecciones con los mismos meses del año anterior. No se compara con el primer año del alcalde, porque ese año se gasta poco por el arranque de la gestión.</li>
         <li><b>Número de obras.</b> Obras distintas que recibieron al menos un pago en el año.</li>
         <li><b>Tipo de obra.</b> Gasto de inversión (adquisición de activos no financieros) según la función del clasificador del MEF, desde 2009.</li>
         <li><b>Obra a medias abandonada.</b> Obra con pagos en los 6 meses previos al 1 de enero, con menos de 80% de su costo pagado, que no recibe ningún pago en los 24 meses siguientes.</li>
-        <li>Una regresión con efectos fijos de municipalidad, año y mes confirma el patrón (detalle en el repositorio).</li>
+        <li><b>Regresión.</b> Gasto mensual de cada municipalidad con efectos fijos de municipalidad, año y mes calendario. Así cada mes se compara con el mismo mes de otros años y no pesa el gasto de diciembre por el cierre del año fiscal.</li>
       </ul></div>
       <div><h2>Fuentes</h2><ul>
         <li><b>Gasto en obras.</b> MEF, <a href="https://datosabiertos.mef.gob.pe/">Portal de Datos Abiertos</a>. Archivos anuales de ejecución del gasto
@@ -216,10 +226,12 @@
         <li><b>Alcaldes y regidores electos 2014-2022.</b> JNE, <a href="https://www.datosabiertos.gob.pe/dataset/autoridades-electas-en-procesos-electorales-jurado-nacional-de-elecciones">autoridades electas</a>, con DNI para seguir a cada persona.</li>
         <li><b>Obras paralizadas.</b> Contraloría, <a href="https://www.gob.pe/institucion/contraloria/informes-publicaciones/8489152-informe-de-obras-paralizadas-en-el-territorio-nacional-a-junio-de-2026">informe a junio de 2026</a>
           (<span id="paral"></span> obras municipales).</li>
+        <li><b>Inflación.</b> BCRP, <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/mensuales/resultados/PN38705PM/html">IPC de Lima Metropolitana</a> (serie PN38705PM).</li>
         <li><b>Mapa de distritos.</b> Límites distritales del INEI (1,874 distritos), en la versión de GeoGPS Perú publicada en <a href="https://github.com/nicosil02/Dashboard/tree/main/Distrital">nicosil02/Dashboard</a>.</li>
       </ul></div>
       <div><h2>Limitaciones</h2><ul>
         <li>Muestra asociación, no causalidad.</li>
+        <li>No hay datos mensuales por distrito para cada tipo de obra en el gráfico mes a mes. Ahí se muestra el gasto total de la zona.</li>
         <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
         <li>En 2007 muchas municipalidades entraron al SIAF a mitad de año. La gestión 2007-2010 usa solo las 1,181 que reportaban desde enero.</li>
         <li>17 distritos creados entre 2020 y 2022 (como Alto Trujillo) no tienen polígono en el mapa del INEI: su gasto sí entra en los totales, pero no se dibujan.</li>
@@ -239,6 +251,9 @@ const fmt = n => Math.round(n).toLocaleString("es-PE");
 const C = { acento: "#c2410c", claro: "#f0a070", barra: "#b4b8bd", vacio: "#ececea", tinta: "#1f2328", tinta3: "#7d838a" };
 const Y0 = 2007, ANIOS = d3.range(Y0, 2027), GESTIONES = [2007, 2011, 2015, 2019];
 const esElec = y => (y - Y0) % 4 === 3;
+// Junio a diciembre (campaña y salida del alcalde) de cada año.
+const gas2 = (c, y) => medida === "o" ? c.o2[y - Y0] : medida === "g" ? c.g2[y - Y0] : c.f2[medida]?.[y - Y0] ?? 0;
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 const gas = (c, y) => medida === "o" ? c.o[y - Y0] : medida === "g" ? c.g[y - Y0] : c.f[medida]?.[y - Y0] ?? 0;
 // Que se mide: gasto total, numero de obras o gasto de un tipo de obra.
 const tipo = () => medida !== "g" && medida !== "o";
@@ -291,7 +306,7 @@ Promise.all(["datos.json", "mapa.json", "distritos.geojson", "pais.json"].map(f 
   actualizar();
 });
 
-function elegir(g) { ini = tipo() && g === Y0 ? 2011 : g; actualizar(); }
+function elegir(g) { ini = g; actualizar(); }
 function parar() { clearInterval(timer); timer = null; $("play").textContent = "▶ Recorrer las gestiones"; }
 function recorrer() {
   $("play").textContent = "❚❚ Pausar";
@@ -331,18 +346,17 @@ function buscar(q) {
 function estado() {
   const dep = $("f-dep").value, tam = $("f-tam").value, area = $("f-prov").value || dep;
   const cols = M.columnas.filter(c => (area === "PE" || c.u.startsWith(area)) && (tam === "todos" || tercio.get(c.u) === tam));
-  // 2007 solo cuenta para las municipalidades que ya reportaban en enero.
-  const comp = ini === Y0 ? cols.filter(c => c.e7) : cols;
-  const fin = ini + 3, primero = d3.sum(comp, c => gas(c, ini)), ultimo = d3.sum(comp, c => gas(c, fin));
-  const dist = comp.filter(c => gas(c, ini) + gas(c, fin) > 0.05).map(c => ({ c, a: gas(c, ini), b: gas(c, fin) }));
-  return { dep, area, tam, cols, fin, primero, ultimo, dist,
+  // Junio a diciembre del año de elecciones (fin) frente a los mismos meses del año anterior (pre).
+  const fin = ini + 3, pre = fin - 1, primero = d3.sum(cols, c => gas2(c, pre)), ultimo = d3.sum(cols, c => gas2(c, fin));
+  const dist = cols.filter(c => gas2(c, pre) + gas2(c, fin) > 0.05).map(c => ({ c, a: gas2(c, pre), b: gas2(c, fin) }));
+  return { dep, area, tam, cols, fin, pre, primero, ultimo, dist,
            zona: area === "PE" ? "Perú" : area.length === 4 ? `provincia de ${D.provincias[area]}` : D.departamentos[dep],
            T: ini + 4, ab: D.abandono.filter(x => x.dep === area), sel: distrito && M.columnas.find(c => c.u === distrito) };
 }
 
 function actualizar() {
   const s = estado();
-  d3.select("#f-ges").selectAll("button").classed("on", g => g === ini).property("disabled", g => tipo() && g === Y0);
+  d3.select("#f-ges").selectAll("button").classed("on", g => g === ini);
   const f = s.sel && GEO.features.find(f => f.properties.u === distrito);
   $("chip").hidden = !s.sel;
   if (s.sel) {
@@ -350,29 +364,74 @@ function actualizar() {
     $("quitar").onclick = () => verDistrito(null);
   }
   // Si el mapa hace zoom, el resto se actualiza al terminar: animar todo a la vez lo traba.
-  const turno = ++TURNO, dur = mapa(s), resto = () => turno === TURNO && (kpis(s), anual(s, f), abandono(s), relac(), ranking(s));
+  const turno = ++TURNO, dur = mapa(s), resto = () => turno === TURNO && (kpis(s), ciclo(s), anual(s, f), abandono(s), relac(), ranking(s));
   dur ? setTimeout(resto, dur) : resto();
 }
 
 function kpis(s) {
   const mas = s.dist.filter(d => d.b > d.a).length, t = s.ab.find(x => x.anio === s.T), p = s.ab.find(x => x.anio === s.T - 2);
   // Con un distrito elegido, el primer indicador es el de ese distrito.
-  const [a, b] = s.sel ? [gas(s.sel, ini), gas(s.sel, s.fin)] : [s.primero, s.ultimo];
+  const [a, b] = s.sel ? [gas2(s.sel, s.pre), gas2(s.sel, s.fin)] : [s.primero, s.ultimo];
   contar("k1", a > 0 ? b / a : null, cambio);
-  $("k1l").textContent = `${nombreMed()}${s.sel ? " de " + s.sel.n : ""} en ${s.fin}, último año del alcalde, frente a ${ini}, su primer año (de ${fv(a)} a ${fv(b)})`;
+  $("k1l").textContent = `${nombreMed()}${s.sel ? " de " + s.sel.n : ""} de junio a diciembre de ${s.fin}, campaña y salida del alcalde, frente a los mismos meses de ${s.pre} (de ${fv(a)} a ${fv(b)})`;
   contar("k2", 100 * mas / s.dist.length, v => Math.round(v) + "%");
-  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} en su último año que en el primero (${s.zona})`;
+  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} de junio a diciembre de ${s.fin} que en ${s.pre} (${s.zona})`;
   contar("k3", t && t.pct, v => Math.round(v) + "%");
   $("k3l").textContent = t ? `de las obras a medias se quedó sin pagos al entrar el nuevo alcalde en ${s.T}. En ${s.T - 2}, sin cambio, fue ${p ? Math.round(p.pct) : "s/d"}%.` : "";
   contar("k4", t && t.abandonadas, fmt);
   $("k4l").textContent = `obras a medias abandonadas tras el cambio de alcalde de ${s.T} (${s.zona})`;
 }
 
+// Mes a mes: año de elecciones frente al año anterior, con la campaña y la salida marcadas.
+function ciclo(s) {
+  const o = medida === "o", ser = D.serie[s.area] || D.serie.PE, k = o ? "obras" : "gasto";
+  const idx = new Map(D.meses.map((m, i) => [m, i]));
+  const val = (y, m) => ser[k][idx.get(`${y}-${String(m).padStart(2, "0")}`)] ?? 0;
+  const suma = (y, ms) => d3.sum(ms, m => val(y, m));
+  const V = [["Campaña", [6, 7, 8, 9]], ["Tras la elección", [10, 11, 12]]]
+    .map(([l, ms]) => ({ l, ms, r: suma(s.pre, ms) > 0 ? suma(s.fin, ms) / suma(s.pre, ms) : null }));
+  const R = D.regresion["indice_gasto|sin_reeleccion|eleccion"], pc = v => Math.round(Math.abs(v.pct)) + "%";
+  $("t-ciclo").textContent = o ? "Cuando ya se van, pagan más obras" : "Gastan más cuando ya se van";
+  $("s-ciclo").textContent = `${o ? "Obras con pagos" : "Millones de soles de 2022"} por mes, ${s.zona}` +
+    (tipo() ? ", gasto total en obras (no hay datos mensuales por tipo)" : "") + `. Con controles por municipalidad, año y mes, ` +
+    `desde 2015 el gasto sube ${pc(R.campana)} en la campaña y ${pc(R.cola)} entre la elección y la salida, ` +
+    `y cae ${pc(R.inicio)} en los primeros 3 meses del nuevo alcalde (todo el Perú).`;
+  const W = 1000, H = 290, m = { t: 52, r: 58, b: 30, l: 56 }, M12 = d3.range(1, 13);
+  const x = d3.scalePoint().domain(M12).range([m.l, W - m.r]).padding(0.4), paso = x.step();
+  const y = d3.scaleLinear().domain([0, (d3.max([s.pre, s.fin], a => d3.max(M12, mm => val(a, mm))) || 1) * 1.1]).nice().range([H - m.b, m.t]);
+  const svg = d3.select("#ciclo");
+  if (svg.select(".lineas").empty()) {
+    ["zonas", "eje", "lineas", "etq", "hover"].forEach(c => svg.append("g").attr("class", c));
+    svg.select(".etq").selectAll("text.mes").data(M12).join("text").attr("class", "mes").attr("x", x).attr("y", H - 8)
+      .attr("text-anchor", "middle").attr("font-size", 12).attr("fill", C.tinta3).text(mm => MESES[mm - 1]);
+  }
+  const z = svg.select(".zonas").selectAll("g").data(V).join(e => { const g = e.append("g");
+    g.append("rect").attr("fill", "#f3f3f0").attr("rx", 4); g.append("text").attr("class", "n"); g.append("text").attr("class", "r"); return g; });
+  z.select("rect").attr("x", d => x(d.ms[0]) - paso / 2 + 2).attr("width", d => paso * d.ms.length - 4).attr("y", 4).attr("height", H - m.b - 4);
+  z.select("text.n").attr("x", d => x(d.ms[0]) - paso / 2 + 12).attr("y", 22).attr("font-size", 12.5).attr("fill", C.tinta3).text(d => d.l);
+  z.select("text.r").attr("x", d => x(d.ms[0]) - paso / 2 + 12).attr("y", 42).attr("font-size", 16).attr("font-weight", 700)
+    .attr("fill", d => d.r > 1 ? C.acento : C.tinta).text(d => d.r == null ? "s/d" : cambio(d.r) + " frente a " + s.pre);
+  svg.select(".eje").attr("transform", `translate(${m.l},0)`)
+    .call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(d => fmt(d)))
+    .call(g => g.select(".domain").remove()).call(g => g.selectAll("line").attr("stroke", "#e4e4e1"))
+    .call(g => g.selectAll("text").attr("fill", C.tinta3).attr("font-size", 12));
+  const linea = d3.line().x(d => x(d[0])).y(d => y(d[1])), L = [[0, s.pre, C.barra], [1, s.fin, C.acento]];
+  const gl = svg.select(".lineas").selectAll("g").data(L, d => d[0]).join(e => { const g = e.append("g");
+    g.append("path").attr("fill", "none").attr("stroke-width", 2.5).attr("stroke", d => d[2]);
+    g.append("text").attr("font-size", 13).attr("font-weight", 700).attr("fill", d => d[0] ? C.acento : C.tinta3); return g; });
+  gl.select("path").transition().duration(DUR).attr("d", d => linea(M12.map(mm => [mm, val(d[1], mm)])));
+  gl.select("text").text(d => d[1]).attr("x", x(12) + 10).transition().duration(DUR).attr("y", d => y(val(d[1], 12)) + 4);
+  svg.select(".hover").selectAll("rect").data(M12).join("rect").attr("x", mm => x(mm) - paso / 2).attr("width", paso)
+    .attr("y", m.t).attr("height", H - m.b - m.t).attr("fill", "transparent")
+    .on("mousemove", (e, mm) => verTip(e, `<b>${MESES[mm - 1]}</b><br>${s.pre}: ${fv(val(s.pre, mm))}<br>${s.fin}: ${fv(val(s.fin, mm))}`))
+    .on("mouseleave", ocultarTip);
+}
+
 function anual(s, f) {
   const fuente = s.sel ? [s.sel] : s.cols;
-  const Nom = nombreMed()[0].toUpperCase() + nombreMed().slice(1), uni = medida === "o" ? "Número de obras" : "Millones de soles";
+  const Nom = nombreMed()[0].toUpperCase() + nombreMed().slice(1), uni = medida === "o" ? "Número de obras" : "Millones de soles de 2022";
   $("t-anual").textContent = s.sel ? `${Nom} de ${s.sel.n}, año por año`
-    : medida === "g" ? "Cada gestión termina con su año de más gasto en obras" : `${Nom}, año por año`;
+    : medida === "g" ? "Cada alcalde empieza lento y acelera hacia el final" : `${Nom}, año por año`;
   $("s-anual").textContent = s.sel ? `${uni}. Haz clic otra vez en el distrito para volver al total.`
     : `${uni} por año.` + (medida === "o" ? " Cuenta cada obra que recibió algún pago en el año." : "")
       + (tipo() ? " Gasto de inversión en esa función; no hay datos antes de 2009." : "") + " Haz clic en una barra para elegir esa gestión.";
@@ -410,7 +469,7 @@ function anual(s, f) {
   [2007, 2011, 2015, 2019, 2023].forEach(g => an.append("text").attr("x", x(g) + ancho4 / 2)
     .attr("y", H - m.b + 36).attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", g === ini ? 700 : 400)
     .attr("fill", g === ini ? C.tinta : C.tinta3).text(`Gestión ${g}-${g + 3}${g === 2023 ? " (en curso)" : ""}`));
-  const a = v.find(d => d.y === ini), b = v.find(d => d.y === ini + 3), r = a.g > 0 ? b.g / a.g : null;
+  const a = v.find(d => d.y === ini + 2), b = v.find(d => d.y === ini + 3), r = a.g > 0 ? b.g / a.g : null;
   const nota = an.append("g").attr("opacity", 0);
   const fm = n => n < 10 ? n.toFixed(1) : fmt(n);
   [a, b].forEach(d => nota.append("text").attr("x", x(d.y) + x.bandwidth() / 2).attr("y", y(d.g) - 6).attr("text-anchor", "middle")
@@ -420,7 +479,7 @@ function anual(s, f) {
     nota.append("path").attr("d", `M${xa},${y(a.g) - 20} V${yl} H${xb} V${y(b.g) - 20}`)
       .attr("fill", "none").attr("stroke", C.tinta).attr("stroke-width", 1);
     nota.append("text").attr("x", (xa + xb) / 2).attr("y", yl - 6).attr("text-anchor", "middle").attr("font-size", 14)
-      .attr("font-weight", 700).attr("fill", r > 1 ? C.acento : C.tinta).text(cambio(r) + " en el último año");
+      .attr("font-weight", 700).attr("fill", r > 1 ? C.acento : C.tinta).text(cambio(r) + " en el año de elecciones");
   }
   nota.transition().delay(DUR).duration(DUR / 2).attr("opacity", 1);
 }
@@ -437,7 +496,7 @@ function subir() {
 // Siempre se dibuja todo el Perú; lo elegido queda al frente y el resto, translúcido.
 // La cámara (escala y traslado del grupo) se mueve con d3.interpolateZoom.
 function mapa(s) {
-  $("t-mapa").textContent = `¿Qué distritos ${verbo()} en ${s.fin} que en ${ini}?`;
+  $("t-mapa").textContent = `¿Qué distritos ${verbo()} de junio a diciembre de ${s.fin} que en ${s.pre}?`;
   const r = new Map(s.dist.map(d => [d.c.u, d]));
   const dentro = f => s.area === "PE" || f.properties.u.startsWith(s.area);
   // Mapas detallados de las provincias de la zona elegida (se cargan una vez).
@@ -480,7 +539,7 @@ function mapa(s) {
     .on("click", (e, f) => sel ? (f === sel ? null : verDistrito(null)) : dentro(f) ? verDistrito(f.properties.u) : subir())
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
-        ? `${ini}: ${fv(d.a)}<br>${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
+        ? `Jun a dic ${s.pre}: ${fv(d.a)}<br>Jun a dic ${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
         : "Fuera de la zona elegida") + `<br><i>${sel && f !== sel || !dentro(f) ? "Clic para volver a la vista anterior" : "Clic para ver su gasto año por año"}</i>`); })
     .on("mouseleave", ocultarTip);
   const clave = s.area + "|" + (sel ? distrito : "") + "|" + feats.filter(dentro).length;
@@ -552,12 +611,11 @@ function relac() {
 }
 
 function ranking(s) {
-  const o = medida === "o", min = o ? 10 : tipo() ? 0.3 : 1, n = v => o ? fmt(v) : v.toFixed(1);
+  const o = medida === "o", min = o ? 5 : tipo() ? 0.2 : 0.5, n = v => o ? fmt(v) : v.toFixed(1);
   const top = s.dist.filter(d => d.a >= min).sort((p, q) => q.b / q.a - p.b / p.a).slice(0, 8);
-  $("t-rank").textContent = `Donde más creció el ${o ? "número de obras" : nombreMed()} en el último año (${s.zona})`;
-  $("s-rank").textContent = o ? "Distritos con al menos 10 obras con pagos en su primer año"
-    : `Distritos con al menos S/ ${min === 1 ? "1 millón" : "300 mil"} de ${nombreMed()} en su primer año`;
-  $("th1").textContent = `${ini} (${o ? "obras" : "S/ mill."})`; $("th4").textContent = `${s.fin} (${o ? "obras" : "S/ mill."})`;
+  $("t-rank").textContent = `Donde más creció el ${o ? "número de obras" : nombreMed()} en la campaña y salida (${s.zona})`;
+  $("s-rank").textContent = `Junio a diciembre. Distritos con al menos ${o ? "5 obras con pagos" : `S/ ${min === 0.5 ? "500" : "200"} mil de ${nombreMed()}`} en esos meses de ${s.pre}`;
+  $("th1").textContent = `${s.pre} (${o ? "obras" : "S/ mill."})`; $("th4").textContent = `${s.fin} (${o ? "obras" : "S/ mill."})`;
   d3.select("#rank").selectAll("tr").data(top.length ? top : [null]).join("tr")
     .html(d => d ? `<td>${d.c.n}</td><td class="num">${n(d.a)}</td><td class="num">${n(d.b)}</td>` +
       `<td class="num"><b>${cambio(d.b / d.a)}</b></td>` : `<td colspan="4">No hay distritos con ese tamaño de gasto en este filtro.</td>`)

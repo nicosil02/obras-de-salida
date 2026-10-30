@@ -54,13 +54,18 @@ TIPOS = {"TRANSPORTE": "tr", "SANEAMIENTO": "sa", "EDUCACION": "ed", "CULTURA Y 
 
 
 def por_tipo(anios):
-    """Gasto de inversion por distrito, tipo y anio (millones). Antes de 2009 no hay generica."""
+    """Gasto de inversion por distrito, tipo y anio (millones de soles de 2022), del anio entero
+    y de junio a diciembre. Antes de 2009 no hay generica."""
     g = pd.concat(pd.read_parquet(PROC / "gasto" / f"gasto_municipal_{a}.parquet",
-                                  columns=["ANO_EJE", "UBIGEO", "FUNCION_NOMBRE", "GENERICA_NOMBRE", "DEVENGADO"])
+                                  columns=["ANO_EJE", "MES", "UBIGEO", "FUNCION_NOMBRE", "GENERICA_NOMBRE", "DEVENGADO"])
                   for a in anios)
     g = g[(g["GENERICA_NOMBRE"] == "ADQUISICION DE ACTIVOS NO FINANCIEROS") & g["FUNCION_NOMBRE"].isin(TIPOS)]
     g["UBIGEO"] = g["UBIGEO"].where(g["UBIGEO"].str[-2:] != "00", g["UBIGEO"].str[:4] + "01").replace(RECODIFICA)
-    return g.groupby(["UBIGEO", g["FUNCION_NOMBRE"].map(TIPOS), g["ANO_EJE"].astype(int)])["DEVENGADO"].sum() / 1e6
+    t = g["ANO_EJE"].astype(int) * 12 + g["MES"].astype(int) - 1
+    g["DEVENGADO"] = g["DEVENGADO"] * t.map(A.deflactor()).values
+    g["tipo"], g["anio"] = g["FUNCION_NOMBRE"].map(TIPOS), g["ANO_EJE"].astype(int)
+    k = ["UBIGEO", "tipo", "anio"]
+    return g.groupby(k)["DEVENGADO"].sum() / 1e6, g[t % 12 >= 5].groupby(k)["DEVENGADO"].sum() / 1e6
 
 
 # En 2014 se creo la provincia de Putumayo y el INEI recodifico dos distritos de Maynas.
@@ -74,8 +79,13 @@ def mapa3d(m, d, inv, cen):
     p = A.pagos()
     p["UBIGEO"] = p["UBIGEO"].where(p["UBIGEO"].str[-2:] != "00", p["UBIGEO"].str[:4] + "01").replace(RECODIFICA)
     p = p[p["t"] // 12 >= 2007]
+    p["DEVENGADO"] = p["DEVENGADO"] * p["t"].map(A.deflactor())  # soles de 2022
     obras = p.groupby(["UBIGEO", p["t"] // 12])["obra"].nunique()
     gasto = p.groupby(["UBIGEO", p["t"] // 12])["DEVENGADO"].sum() / 1e6
+    # Junio a diciembre: campana y meses entre la eleccion y la salida del alcalde.
+    h = p[p["t"] % 12 >= 5]
+    obras2 = h.groupby(["UBIGEO", h["t"] // 12])["obra"].nunique()
+    gasto2 = h.groupby(["UBIGEO", h["t"] // 12])["DEVENGADO"].sum() / 1e6
     anios = list(range(2007, 2027))
     # 2007 esta incompleto: solo cuentan las municipalidades que ya reportaban en enero.
     g7 = pd.read_parquet(PROC / "gasto" / "gasto_municipal_2007.parquet")
@@ -83,7 +93,7 @@ def mapa3d(m, d, inv, cen):
     enero07 = set(u7.where(u7.str[-2:] != "00", u7.str[:4] + "01").replace(RECODIFICA))
     # Distritos creados despues del mapa del INEI: entran en los totales aunque no se dibujen.
     nom = pd.read_csv(ORIG / "DETALLE_INVERSIONES.csv", dtype=str, usecols=["UBIGEO", "PROVINCIA", "DISTRITO"])         .dropna().drop_duplicates("UBIGEO").set_index("UBIGEO")
-    tipo = por_tipo(anios)
+    tipo, tipo2 = por_tipo(anios)
     col = []
     for u in sorted(set(obras.index.get_level_values(0))):
         if u in cen.index:
@@ -96,7 +106,11 @@ def mapa3d(m, d, inv, cen):
                     "g": [round(float(gasto.get((u, a), 0)), 2) for a in anios],
                     "o": [int(obras.get((u, a), 0)) for a in anios], "e7": int(u in enero07),
                     "f": {t: [round(float(tipo.get((u, t, a), 0)), 2) for a in anios]
-                          for t in TIPOS.values() if (u, t) in tipo.index.droplevel(2)}})
+                          for t in TIPOS.values() if (u, t) in tipo.index.droplevel(2)},
+                    "g2": [round(float(gasto2.get((u, a), 0)), 2) for a in anios],
+                    "o2": [int(obras2.get((u, a), 0)) for a in anios],
+                    "f2": {t: [round(float(tipo2.get((u, t, a), 0)), 2) for a in anios]
+                           for t in TIPOS.values() if (u, t) in tipo2.index.droplevel(2)}})
     # Obras inconclusas abandonadas en cada cambio de alcalde, con sus coordenadas; las que
     # no tienen coordenadas van al centro de su distrito con un desplazamiento aleatorio.
     ab = d[d["transicion"] & d["abandonada"].astype(bool)].copy()
@@ -235,12 +249,13 @@ def main():
             abandono.append({"dep": dep, "anio": int(anio), "transicion": anio in A.TRANSICIONES,
                              "n": len(h), "abandonadas": int(h["abandonada"].sum()),
                              "pct": round(100 * h["abandonada"].mean(), 1)})
-    # Gasto mensual en obras por departamento (S/ millones), con el ubigeo de la municipalidad.
+    # Gasto mensual en obras por departamento y provincia (S/ millones de 2022).
     m = A.panel_ejecucion()
     ub = p.sort_values("t").drop_duplicates("SEC_EJEC", keep="last").set_index("SEC_EJEC")["UBIGEO"]
     m["dep"] = m["SEC_EJEC"].map(ub).str[:2]
+    m["prov"] = m["SEC_EJEC"].map(ub).str[:4]
     serie = {}
-    for dep, g in [("PE", m)] + list(m.groupby("dep")):
+    for dep, g in [("PE", m)] + list(m.groupby("dep")) + list(m.groupby("prov")):
         s = g.groupby("t")[["gasto", "obras", "nuevas"]].sum()
         serie[dep] = {"gasto": (s["gasto"] / 1e6).round(1).tolist(),
                       "obras": s["obras"].astype(int).tolist(),
@@ -248,9 +263,11 @@ def main():
     # El panel empieza en 2008 (anio siguiente a la entrada al SIAF); todas las series
     # comparten el mismo eje de meses.
     meses = sorted(m["t"].unique())
-    for dep in serie:
-        if len(serie[dep]["gasto"]) != len(meses):
-            raise ValueError(f"serie incompleta: {dep}")
+    for dep in list(serie):
+        if len(serie[dep]["gasto"]) != len(meses):  # provincias sin gasto en algun mes
+            s = m[m[["dep", "prov"][len(dep) == 4]] == dep].groupby("t")[["gasto", "obras"]].sum().reindex(meses, fill_value=0)
+            serie[dep] = {"gasto": (s["gasto"] / 1e6).round(1).tolist(), "obras": s["obras"].astype(int).tolist()}
+        serie[dep].pop("nuevas", None)
 
     geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     deps = {f["properties"]["IDDPTO"]: f["properties"]["NOMBDEP"].title() for f in geo["features"]}

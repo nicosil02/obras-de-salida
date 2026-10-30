@@ -10,13 +10,17 @@ En Lurigancho (Lima), el proyecto de mejoramiento y ampliación de la red de alc
 
 Los datos muestran que dejó de recibir pagos. No dicen por qué, ni que el nuevo alcalde la haya abandonado a propósito.
 
-## 2. El último año es el de más gasto
+## 2. Gastan más cuando ya se van
 
-En la gestión 2019-2022 las municipalidades del Perú pagaron S/ 12,616 millones en obras en su primer año y S/ 20,292 millones en el último, es decir +61%. El 70% de los distritos (7 de 10) gastó más en su último año que en el primero. El patrón se repite en las cuatro gestiones desde 2007 (2.6 veces en 2007-2010, +67% en 2011-2014 y +44% en 2015-2018).
+Todo el gasto está en soles de 2022 (corregido por inflación con el IPC de Lima del BCRP). Las elecciones municipales son a inicios de octubre y el nuevo alcalde entra el 1 de enero.
+
+Desde 2015 los alcaldes no pueden reelegirse. Desde entonces, frente a los mismos meses de otros años de la misma municipalidad, el gasto en obras sube 18% en los meses de campaña (junio a setiembre) y 37% entre la elección y la salida del alcalde (octubre a diciembre). En los primeros tres meses del nuevo alcalde cae 15%. Antes de 2015, cuando podían reelegirse, la campaña subía 8% y no había un salto claro después de la elección.
+
+De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021. El 63% de los distritos gastó más.
 
 ## 3. Crecen más las obras que se ven
 
-El gasto en cultura y deporte (estadios, losas) pasó de S/ 653 millones en 2019 a S/ 1,920 millones en 2022, es decir 2.9 veces. En las dos gestiones anteriores se multiplicó por 2.1. El gasto en agua y desagüe creció mucho menos (+10% en 2019-2022). Cultura y deporte es la función del clasificador del MEF que incluye estadios y losas deportivas.
+De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) fue 2.5 veces el de los mismos meses de 2021. En 2018 fue 1.9 veces. El gasto en agua y desagüe subió apenas 7% en 2022 y bajó 17% en 2018. Cultura y deporte es la función del clasificador del MEF que incluye estadios y losas deportivas.
 
 ## 4. Cuando cambia el alcalde, más obras se quedan a medias
 
@@ -37,11 +41,12 @@ Con el DNI de los alcaldes y regidores electos que publica el JNE se puede ver l
 
 ## 6. Conclusión
 
-Los alcaldes concentran el gasto en obras en su último año, y cuando se van muchas de esas obras quedan a medias. Cada distrito puede verse en el dashboard: https://nicosil02.github.io/obras-de-salida/
+Los alcaldes aceleran el gasto en obras cuando ya se van, y muchas de esas obras quedan a medias. Cada distrito puede verse en el dashboard: https://nicosil02.github.io/obras-de-salida/
 
 ## Fuentes
 
 - MEF, Datos Abiertos: gasto devengado mensual 2007-2026 y banco de inversiones.
+- BCRP: IPC de Lima Metropolitana (serie PN38705PM).
 - ONPE: resultados de las elecciones municipales 2006-2022.
 - JNE: autoridades electas 2014-2022.
 
@@ -50,3 +55,4 @@ Los alcaldes concentran el gasto en obras en su último año, y cuando se van mu
 - Una obra puede dejar de recibir pagos porque terminó sin registrar su cierre o por problemas técnicos, no solo por decisión del nuevo alcalde.
 - Es una asociación, no una prueba de causalidad.
 - La gestión 2023-2026 sigue en curso.
+- La comparación por meses es más justa que comparar el último año con el primero, porque el primer año de cada alcalde se gasta poco por el arranque.

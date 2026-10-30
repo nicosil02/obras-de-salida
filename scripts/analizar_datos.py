@@ -54,6 +54,14 @@ TRANSICIONES = [2011, 2015, 2019, 2023]  # enero en que asume el alcalde nuevo
 PLACEBOS = [2009, 2013, 2017, 2021]      # enero a mitad de gestion, sin cambio de alcalde
 
 
+def deflactor():
+    """Factor para pasar soles de cada mes t a soles de 2022 (IPC de Lima del BCRP, serie PN38705PM)."""
+    ipc = pd.read_csv(RAIZ / "datos" / "originales" / "ipc_lima.csv")
+    t = ipc["mes"].str[:4].astype(int) * 12 + ipc["mes"].str[5:].astype(int) - 1
+    ipc = ipc.set_index(t)["ipc"]
+    return ipc[(ipc.index // 12) == 2022].mean() / ipc
+
+
 def pagos():
     """Pagos mensuales por obra 2007-2026 (solo pagos positivos), con indice de mes t."""
     p = pd.concat(pd.read_parquet(f) for f in sorted((PROC / "gasto").glob("pagos_obra_*.parquet")))
@@ -114,7 +122,7 @@ def abandono():
 
 
 def panel_ejecucion():
-    """Municipalidad x mes 2007-2026: gasto pagado en obras, obras con pagos y obras que
+    """Municipalidad x mes 2007-2026: gasto pagado en obras (soles de 2022), obras con pagos y obras que
     reciben su primer pago; mas las transferencias del anio (canon, FONCOMUN...)."""
     p = pagos()
     p["nueva"] = p["t"] == p.groupby("obra")["t"].transform("min")
@@ -124,6 +132,7 @@ def panel_ejecucion():
                                      names=["SEC_EJEC", "t"])
     m = m.reindex(idx, fill_value=0).reset_index()
     m["MES"] = pd.to_datetime(dict(year=m["t"] // 12, month=m["t"] % 12 + 1, day=1))
+    m["gasto"] = m["gasto"] * m["t"].map(deflactor())  # soles de 2022
     tr = pd.concat(pd.read_parquet(f) for f in (PROC / "transferencias").glob("*.parquet"))
     tr = tr.groupby([tr["SEC_EJEC"], tr["ANO_PRC"].astype(int)])["MONTO"].sum()
     m["log_transf"] = np.log1p(tr.reindex(pd.MultiIndex.from_arrays(
