@@ -56,7 +56,7 @@
   td { padding: 6px; }
   tbody tr:nth-child(odd) td { background: #fafaf8; }
   .num { text-align: right; }
-  .porque .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .porque .cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
   .porque p { margin: 0; color: var(--tinta-2); }
   .play { width: 100%; font: inherit; font-weight: 600; margin-top: 8px; padding: 8px 10px; border: 0; border-radius: 6px;
           background: var(--acento); color: #fff; cursor: pointer; }
@@ -69,9 +69,13 @@
   .mapa-w { position: relative; }
   #mapa-c { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
   .porque p b { color: var(--tinta); }
-  .texto { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 16px; margin-top: 16px; font-size: 13.5px; color: var(--tinta-2); }
-  .texto h2 { font-size: 15px; color: var(--tinta); margin: 0 0 6px; }
-  .texto ol, .texto ul { margin: 0; padding-left: 18px; } .texto li { margin-bottom: 6px; }
+  .titulo-sec { font-size: 18px; margin: 28px 0 10px; }
+  .hall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .hall .n { font-size: 34px; font-weight: 800; line-height: 1.1; }
+  .hall p { margin: 6px 0 0; font-size: 15px; color: var(--tinta-2); line-height: 1.45; }
+  .texto { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 16px; font-size: 14.5px; color: var(--tinta-2); line-height: 1.5; }
+  .texto h2 { font-size: 16px; color: var(--tinta); margin: 0 0 8px; }
+  .texto ul { margin: 0; padding-left: 18px; } .texto li { margin-bottom: 8px; }
   .texto a { color: var(--tinta); }
   .tip { position: fixed; z-index: 10; pointer-events: none; display: none; max-width: 300px; background: var(--papel);
          border: 1px solid #c9ccd0; border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.4; box-shadow: 0 6px 18px rgba(31,35,40,.14); }
@@ -86,7 +90,7 @@
     .app { grid-template-columns: 1fr; } aside { position: static; min-height: 0; border-right: 0; border-bottom: 1px solid var(--linea); }
     .gestiones { grid-template-columns: repeat(4, 1fr); }
     .kpis { grid-template-columns: 1fr 1fr; } .kpi:nth-child(3) { border-left: 0; }
-    .f-mapa, .texto, .porque .cols { grid-template-columns: 1fr; }
+    .f-mapa, .texto, .hall, .porque .cols { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -130,7 +134,7 @@
       <button class="play" id="play" type="button">▶ Recorrer las gestiones</button></div>
     <div class="chip" id="chip" hidden></div>
     <p class="nota">Cada gestión dura 4 años. El primer año entra el alcalde y el último hay elecciones.</p>
-    <p class="nota">Datos del MEF, la ONPE, el JNE y la Contraloría.<br>
+    <p class="nota">Datos del MEF, la ONPE y el BCRP.<br>
       <a href="#metodo">Cómo se calculó</a><br><a href="https://github.com/nicosil02/obras-de-salida">Código y datos</a></p>
   </aside>
 
@@ -188,50 +192,37 @@
       </section>
     </div>
 
-    <div class="texto" id="metodo">
-      <div><h2>Hallazgos</h2><ol>
-        <li><b>Gastan más justo antes de irse.</b> De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021. En 2018 fue 19%. En 2010 y 2014, cuando el alcalde podía reelegirse, fue 7% y -5%.</li>
-        <li><b>En 2022 pasó en 6 de cada 10 distritos.</b> 63% de los distritos gastó más de junio a diciembre de 2022 que en 2021.</li>
-        <li><b>Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.</b> En cada cambio de alcalde, entre 28% y 32% de las obras a medias no recibe ningún pago en 2 años, frente a 18% a 22% en años sin cambio.</li>
-      </ol></div>
+    <h2 class="titulo-sec">Hallazgos</h2>
+    <div class="hall">
+      <div class="panel"><div class="n acento">+30%</div><p>gastaron las municipalidades en obras de junio a diciembre de 2022 frente a 2021. Cuando el alcalde podía reelegirse fue +7% (2010) y -5% (2014).</p></div>
+      <div class="panel"><div class="n">6 de 10</div><p>distritos gastaron más en esos meses de 2022 que en 2021.</p></div>
+      <div class="panel"><div class="n acento">3 de 10</div><p>obras a medias se quedan sin pagar cuando entra el nuevo alcalde. En años sin cambio, 2 de 10.</p></div>
+    </div>
+
+    <div class="texto panel" id="metodo">
       <div><h2>Cómo se calculó</h2><ul>
-        <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2007-2026.</li>
-        <li><b>Soles de 2022.</b> Todo el gasto se corrige por inflación con el IPC de Lima del BCRP.</li>
-        <li><b>Junio a diciembre.</b> Son los meses de campaña, elección y salida del alcalde. Se comparan con los mismos meses del año anterior. No se compara con el primer año del alcalde, porque ese año la inversión cae cerca de 25% por el arranque de la gestión (Jiménez, Merino y Sosa, 2020).</li>
-        <li><b>Número de obras.</b> Obras distintas que recibieron al menos un pago en el año.</li>
-        <li><b>Tipo de obra.</b> Gasto de inversión (adquisición de activos no financieros) según la función del clasificador del MEF, desde 2009.</li>
-        <li><b>Obra a medias abandonada.</b> Obra con pagos en los 6 meses previos al 1 de enero, con menos de 80% de su costo pagado, que no recibe ningún pago en los 24 meses siguientes.</li>
-        <li><b>Comprobación.</b> Una regresión con el gasto mensual de cada municipalidad y efectos fijos de municipalidad, año y mes calendario. Desde 2015, el gasto de junio a setiembre del año de elecciones es 18% mayor que en esos meses de otros años, y el de octubre a diciembre, 37% mayor. Antes de 2015 eran 8% y 4% (este último no significativo).</li>
+        <li>Pagos mes a mes de cada obra de cada municipalidad, 2007-2026.</li>
+        <li>Todo en soles de 2022, corregido por inflación.</li>
+        <li>Se compara junio a diciembre del año de elecciones con los mismos meses del año anterior. No con el primer año del alcalde, que siempre es bajo.</li>
+        <li>Obra abandonada es una obra a medias (menos de 80% pagado) que no recibe ningún pago en los 2 años siguientes.</li>
+        <li>Una regresión con efectos fijos de municipalidad, año y mes confirma el salto desde 2015 (+37% de octubre a diciembre).</li>
       </ul></div>
       <div><h2>Fuentes</h2><ul>
-        <li><b>Gasto en obras.</b> MEF, <a href="https://datosabiertos.mef.gob.pe/">Portal de Datos Abiertos</a>. Archivos anuales de ejecución del gasto
-          (<a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/2022-Gasto.csv">2022-Gasto.csv</a>, uno por año de 2007 a 2026;
-          2016 y 2017 de <a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/2016-Gasto-Devengado.csv">Gasto-Devengado</a>).</li>
-        <li><b>Costo y ubicación de cada obra.</b> MEF, Banco de Inversiones de Invierte.pe
-          (<a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/DETALLE_INVERSIONES.csv">DETALLE_INVERSIONES.csv</a> y
-          <a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/CIERRE_INVERSIONES.csv">CIERRE_INVERSIONES.csv</a>).</li>
-        <li><b>Elecciones municipales 2006-2022.</b> ONPE, resultados oficiales por mesa en la Plataforma Nacional de Datos Abiertos
-          (<a href="https://www.datosabiertos.gob.pe/dataset/resultados-por-mesa-de-las-elecciones-municipales-distritales-2022-oficina-nacional-de">distritales</a> y
-          <a href="https://www.datosabiertos.gob.pe/dataset/resultados-por-mesa-de-las-elecciones-municipales-provinciales-2022-oficina-nacional-de">provinciales</a>,
-          un archivo por elección: 2006, 2010, 2014, 2018 y 2022).</li>
-        <li><b>Alcaldes y regidores electos 2014-2022.</b> JNE, <a href="https://www.datosabiertos.gob.pe/dataset/autoridades-electas-en-procesos-electorales-jurado-nacional-de-elecciones">autoridades electas</a>, con DNI para seguir a cada persona.</li>
-        <li><b>Obras paralizadas.</b> Contraloría, <a href="https://www.gob.pe/institucion/contraloria/informes-publicaciones/8489152-informe-de-obras-paralizadas-en-el-territorio-nacional-a-junio-de-2026">informe a junio de 2026</a>
-          (<span id="paral"></span> obras municipales).</li>
-        <li><b>Estudios citados.</b>
-          Armas y Puppo (2021), <a href="https://repositorio.up.edu.pe/backend/api/core/bitstreams/1156970d-29bf-487d-b3f5-c4a8d86a71f3/content">Ciclos políticos y la prohibición de la reelección de autoridades subnacionales en el Perú</a>, Universidad del Pacífico.
-          Guzmán (2015), <a href="https://repositorio.up.edu.pe/handle/11354/1017">El impacto de las inversiones municipales en la probabilidad de reelección de los alcaldes a nivel distrital en el Perú</a>, tesis de maestría, Universidad del Pacífico.
-          Jiménez, Merino y Sosa (2020), <a href="https://doi.org/10.18800/economia.202002.003">Local Public Investment Drivers in Peru</a>, Economía 43(86), PUCP.
-          Pebe, Radas y Torres (2017), <a href="https://www.cepal.org/es/publicaciones/42699-canon-minero-ciclo-politico-presupuestal-municipalidades-distritales-peru-2002">Canon minero y ciclo político presupuestal en las municipalidades distritales del Perú, 2002-2011</a>, Revista CEPAL 123.</li>
-        <li><b>Inflación.</b> BCRP, <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/mensuales/resultados/PN38705PM/html">IPC de Lima Metropolitana</a> (serie PN38705PM).</li>
-        <li><b>Mapa de distritos.</b> Límites distritales del INEI (1,874 distritos), en la versión de GeoGPS Perú publicada en <a href="https://github.com/nicosil02/Dashboard/tree/main/Distrital">nicosil02/Dashboard</a>.</li>
+        <li><a href="https://datosabiertos.mef.gob.pe/">MEF</a>, ejecución del gasto y Banco de Inversiones.</li>
+        <li><a href="https://www.datosabiertos.gob.pe/dataset/resultados-por-mesa-de-las-elecciones-municipales-distritales-2022-oficina-nacional-de">ONPE</a>, resultados de las elecciones municipales 2006-2022.</li>
+        <li><a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/mensuales/resultados/PN38705PM/html">BCRP</a>, IPC de Lima.</li>
+        <li><a href="https://github.com/nicosil02/Dashboard/tree/main/Distrital">INEI</a>, límites distritales.</li>
+        <li>Estudios. <a href="https://repositorio.up.edu.pe/handle/11354/1017">Guzmán (2015)</a>,
+          <a href="https://doi.org/10.18800/economia.202002.003">Jiménez, Merino y Sosa (2020)</a>,
+          <a href="https://www.cepal.org/es/publicaciones/42699-canon-minero-ciclo-politico-presupuestal-municipalidades-distritales-peru-2002">Pebe, Radas y Torres (2017)</a> y
+          <a href="https://repositorio.up.edu.pe/backend/api/core/bitstreams/1156970d-29bf-487d-b3f5-c4a8d86a71f3/content">Armas y Puppo (2021)</a>.</li>
+        <li>Detalle de archivos y código en el <a href="https://github.com/nicosil02/obras-de-salida">repositorio</a>.</li>
       </ul></div>
       <div><h2>Limitaciones</h2><ul>
         <li>Muestra asociación, no causalidad.</li>
-        <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
-        <li>En 2007 muchas municipalidades entraron al SIAF a mitad de año. La gestión 2007-2010 usa solo las 1,181 que reportaban desde enero.</li>
-        <li>17 distritos creados entre 2020 y 2022 (como Alto Trujillo) no tienen polígono en el mapa del INEI: su gasto sí entra en los totales, pero no se dibujan.</li>
-        <li>La gestión 2023-2026 sigue en curso (datos hasta septiembre de 2026).</li>
-        <li>Elecciones y autoridades se cruzan con los distritos por nombre; entre 1% y 3% no calzan. Se usa la elección original, no las nuevas elecciones o complementarias.</li>
+        <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad.</li>
+        <li>2007 y 2026 están incompletos.</li>
+        <li>17 distritos creados después de 2020 no aparecen en el mapa, pero sí en los totales.</li>
       </ul></div>
     </div>
     <p style="font-size:12.5px;color:var(--tinta-3);margin-top:24px">Nicolás Silva. Python Intermedio, QLAB PUCP.</p>
@@ -281,7 +272,6 @@ Promise.all(["datos.json", "mapa.json", "distritos.geojson", "pais.json"].map(f 
   tercio = new Map(M.columnas.map((c, i) => [c.u, tot[i] <= q[0] ? "1" : tot[i] <= q[1] ? "2" : "3"]));
   $("f-dep").innerHTML = `<option value="PE">Todo el Perú</option>` +
     Object.entries(D.departamentos).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
-  $("paral").textContent = fmt(D.paralizadas);
   d3.select("#f-ges").selectAll("button").data(GESTIONES).join("button").attr("type", "button")
     .html(g => `${g}-${g + 3}<small>elecciones de ${g + 3}</small>`).on("click", (e, g) => { parar(); elegir(g); });
   // Buscador: basta parte del nombre; primero se buscan los distritos de la zona elegida.
@@ -367,13 +357,13 @@ function kpis(s) {
   // Con un distrito elegido, el primer indicador es el de ese distrito.
   const [a, b] = s.sel ? [gas2(s.sel, s.pre), gas2(s.sel, s.fin)] : [s.primero, s.ultimo];
   contar("k1", a > 0 ? b / a : null, cambio);
-  $("k1l").textContent = `${nombreMed()}${s.sel ? " de " + s.sel.n : ""} de junio a diciembre de ${s.fin}, frente a los mismos meses de ${s.pre} (${s.sel ? s.sel.n : s.zona})`;
+  $("k1l").textContent = `${nombreMed()}${s.sel ? " en " + s.sel.n : ""}, junio a diciembre de ${s.fin} frente a ${s.pre}`;
   contar("k2", 100 * mas / s.dist.length, v => Math.round(v) + "%");
-  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} de junio a diciembre de ${s.fin} que en ${s.pre} (${s.zona})`;
+  $("k2l").textContent = `de los distritos ${verbo(false)} en esos meses (${fmt(mas)} de ${fmt(s.dist.length)})`;
   contar("k3", t && t.pct, v => Math.round(v) + "%");
-  $("k3l").textContent = t ? `de las obras a medias se quedó sin pagos al entrar el nuevo alcalde en ${s.T}. En ${s.T - 2}, sin cambio, fue ${p ? Math.round(p.pct) : "s/d"}%.` : "";
+  $("k3l").textContent = t ? `de las obras a medias quedó sin pagos con el nuevo alcalde (${p ? Math.round(p.pct) : "s/d"}% sin cambio)` : "";
   contar("k4", t && t.abandonadas, fmt);
-  $("k4l").textContent = `obras a medias abandonadas tras el cambio de alcalde de ${s.T} (${s.zona})`;
+  $("k4l").textContent = `obras a medias abandonadas en ${s.T}`;
 }
 
 // Las cuatro elecciones: junio a diciembre del año de elecciones frente al año anterior.
