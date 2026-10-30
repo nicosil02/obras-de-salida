@@ -1,4 +1,4 @@
-"""Prepara los datos del dashboard (docs/datos.json y docs/distritos.geojson).
+"""Prepara los datos del dashboard (docs/datos.json, docs/mapa.json y docs/distritos.geojson).
 
 Requiere haber corrido procesar_datos.py y analizar_datos.py.
 """
@@ -16,16 +16,69 @@ ORIG = RAIZ / "datos" / "originales"
 DOCS = RAIZ / "docs"
 
 
-def costos():
-    """Costo de cada inversion, por codigo unico y por codigo SNIP antiguo."""
-    c = ["CODIGO_UNICO", "CODIGO_SNIP", "MONTO_VIABLE", "COSTO_ACTUALIZADO"]
+def inversiones():
+    """Costo, nombre y coordenadas de cada inversion, por codigo unico y por codigo SNIP."""
+    c = ["CODIGO_UNICO", "CODIGO_SNIP", "NOMBRE_INVERSION", "MONTO_VIABLE", "COSTO_ACTUALIZADO",
+         "LATITUD", "LONGITUD"]
     inv = pd.concat(pd.read_csv(ORIG / f, dtype=str, usecols=lambda x: x in c)
                     for f in ["DETALLE_INVERSIONES.csv", "CIERRE_INVERSIONES.csv"])
-    inv["costo"] = pd.to_numeric(inv["COSTO_ACTUALIZADO"], errors="coerce") \
-        .fillna(pd.to_numeric(inv["MONTO_VIABLE"], errors="coerce"))
-    costo = pd.concat([inv.set_index("CODIGO_UNICO")["costo"],
-                       inv.dropna(subset=["CODIGO_SNIP"]).set_index("CODIGO_SNIP")["costo"]])
-    return costo[~costo.index.duplicated()]
+    inv["costo"] = pd.to_numeric(inv["COSTO_ACTUALIZADO"], errors="coerce")         .fillna(pd.to_numeric(inv["MONTO_VIABLE"], errors="coerce"))
+    for k in ["LATITUD", "LONGITUD"]:
+        inv[k] = pd.to_numeric(inv[k], errors="coerce")
+    fuera = ~inv["LATITUD"].between(-18.5, 0.1) | ~inv["LONGITUD"].between(-81.5, -68.5)
+    inv.loc[fuera, ["LATITUD", "LONGITUD"]] = np.nan
+    cols = ["costo", "NOMBRE_INVERSION", "LATITUD", "LONGITUD"]
+    inv = pd.concat([inv.set_index("CODIGO_UNICO")[cols],
+                     inv.dropna(subset=["CODIGO_SNIP"]).set_index("CODIGO_SNIP")[cols]])
+    return inv[~inv.index.duplicated()]
+
+
+def centroides():
+    """Centro aproximado de cada distrito (promedio de los vertices del poligono)."""
+    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    cen = {}
+    for f in geo["features"]:
+        g = f["geometry"]
+        if not g:  # algunos distritos vienen sin geometria
+            continue
+        anillo = g["coordinates"][0] if g["type"] == "Polygon" else             max((pol[0] for pol in g["coordinates"]), key=len)
+        pr = f["properties"]
+        cen[pr["IDDIST"]] = [*np.mean(anillo, axis=0), f"{pr['NOMBDIST'].title()} ({pr['NOMBPROV'].title()})"]
+    cen = pd.DataFrame(cen, index=["lon", "lat", "nombre"]).T
+    return cen.astype({"lon": float, "lat": float})
+
+
+def mapa3d(m, d, inv, cen):
+    """Columnas por distrito y anio (gasto y obras con pagos) y puntos de obras abandonadas."""
+    m = m.assign(anio=m["t"] // 12)
+    # Obras distintas con pagos en el anio (no la suma de los meses).
+    p = A.pagos()
+    p["UBIGEO"] = p["UBIGEO"].where(p["UBIGEO"].str[-2:] != "00", p["UBIGEO"].str[:4] + "01")
+    p = p[p["t"] // 12 >= 2008]
+    obras = p.groupby(["UBIGEO", p["t"] // 12])["obra"].nunique()
+    gasto = p.groupby(["UBIGEO", p["t"] // 12])["DEVENGADO"].sum() / 1e6
+    anios = list(range(2008, 2027))
+    col = []
+    for u in sorted(set(obras.index.get_level_values(0)) & set(cen.index)):
+        col.append({"u": u, "n": cen.at[u, "nombre"], "x": round(cen.at[u, "lon"], 3), "y": round(cen.at[u, "lat"], 3),
+                    "g": [round(float(gasto.get((u, a), 0)), 2) for a in anios],
+                    "o": [int(obras.get((u, a), 0)) for a in anios]})
+    # Obras inconclusas abandonadas en cada cambio de alcalde, con sus coordenadas; las que
+    # no tienen coordenadas van al centro de su distrito con un desplazamiento aleatorio.
+    ab = d[d["transicion"] & d["abandonada"].astype(bool)].copy()
+    cod = ab["obra"].str.split("-").str[1]
+    ab = ab.join(inv[["NOMBRE_INVERSION", "LATITUD", "LONGITUD"]], on=cod.rename("cod"))
+    rng = np.random.default_rng(0)
+    sin = ab["LATITUD"].isna() & ab["UBIGEO"].isin(cen.index)
+    ab.loc[sin, "LATITUD"] = ab.loc[sin, "UBIGEO"].map(cen["lat"]) + rng.normal(0, 0.02, sin.sum())
+    ab.loc[sin, "LONGITUD"] = ab.loc[sin, "UBIGEO"].map(cen["lon"]) + rng.normal(0, 0.02, sin.sum())
+    ab = ab.dropna(subset=["LATITUD"])
+    puntos = [{"a": int(r.anio), "d": str(r.UBIGEO)[:2], "x": round(r.LONGITUD, 4), "y": round(r.LATITUD, 4),
+               "n": str(r.NOMBRE_INVERSION)[:90].capitalize() if isinstance(r.NOMBRE_INVERSION, str) else "Obra sin nombre",
+               "c": round(r.costo / 1e6, 2), "p": round(r.pagado_previo / r.costo * 100)}
+              for r in ab.itertuples()]
+    print(f"mapa: {len(col)} distritos, {len(puntos)} obras abandonadas ({sin.mean():.0%} sin coordenadas)")
+    return {"anios": anios, "columnas": col, "abandonadas": puntos}
 
 
 def inconclusas(p):
@@ -35,7 +88,7 @@ def inconclusas(p):
         .set_index("SEC_EJEC")["UBIGEO"]
     d = pd.concat([A.cohorte(p, a, primer, ejecutora).assign(transicion=a in A.TRANSICIONES)
                    for a in A.TRANSICIONES + A.PLACEBOS])
-    d["costo"] = d["obra"].str.split("-").str[1].map(costos())
+    d["costo"] = d["obra"].str.split("-").str[1].map(inversiones()["costo"])
     d = d[(d["costo"] > 0) & (d["pagado_previo"] < 0.8 * d["costo"])].copy()
     # Las municipalidades con ubigeo "00" (todo el departamento o provincia) van a la capital.
     d["UBIGEO"] = d["UBIGEO"].where(d["UBIGEO"].str[-2:] != "00", d["UBIGEO"].str[:4] + "01")
@@ -53,6 +106,19 @@ def cambio_partido(d):
             for (a, c), v in t.items()]
 
 
+def distritos():
+    """Geojson liviano para el mapa: ubigeo, nombres y coordenadas con 3 decimales (~100 m)."""
+    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    redondear = lambda c: [redondear(x) for x in c] if isinstance(c[0], list)         else [round(c[0], 3), round(c[1], 3)]
+    geo["features"] = [f for f in geo["features"] if f["geometry"]]  # algunos vienen sin geometria
+    for f in geo["features"]:
+        pr = f["properties"]
+        f["properties"] = {"u": pr["IDDIST"], "n": pr["NOMBDIST"].title(), "p": pr["NOMBPROV"].title()}
+        f["geometry"]["coordinates"] = redondear(f["geometry"]["coordinates"])
+    geo.pop("crs", None)
+    (DOCS / "distritos.geojson").write_text(json.dumps(geo, separators=(",", ":")), encoding="utf-8")
+
+
 def main():
     p = A.pagos()
     d = inconclusas(p)
@@ -63,12 +129,6 @@ def main():
             abandono.append({"dep": dep, "anio": int(anio), "transicion": anio in A.TRANSICIONES,
                              "n": len(h), "abandonadas": int(h["abandonada"].sum()),
                              "pct": round(100 * h["abandonada"].mean(), 1)})
-    # Mapa: % de obras inconclusas abandonadas por distrito en cada transicion.
-    t = d[d["transicion"]].groupby(["UBIGEO", "anio"])["abandonada"].agg(["mean", "size"])
-    mapa = {}
-    for (u, a), r in t.iterrows():
-        mapa.setdefault(u, {})[str(a)] = [round(100 * r["mean"]), int(r["size"])]
-
     # Gasto mensual en obras por departamento (S/ millones), con el ubigeo de la municipalidad.
     m = A.panel_ejecucion()
     ub = p.sort_values("t").drop_duplicates("SEC_EJEC", keep="last").set_index("SEC_EJEC")["UBIGEO"]
@@ -95,7 +155,6 @@ def main():
         "abandono": abandono,
         "partido": cambio_partido(d),
         "regresion": json.loads((PROC / "resultados_ejecucion.json").read_text()),
-        "mapa": mapa,
         "paralizadas": int((pd.read_excel(ORIG / "obras_paralizadas_jun2026.xlsx")
                             .filter(like="NIVEL").iloc[:, 0].astype(str)
                             .str.contains("LOCAL|^GL$")).sum()),
@@ -103,21 +162,11 @@ def main():
     DOCS.mkdir(exist_ok=True)
     (DOCS / "datos.json").write_text(json.dumps(datos, ensure_ascii=False, default=float),
                                      encoding="utf-8")
-    # Geojson liviano: solo ubigeo, nombres y coordenadas con 3 decimales (~100 m).
-    for f in geo["features"]:
-        pr = f["properties"]
-        f["properties"] = {"u": pr["IDDIST"], "n": pr["NOMBDIST"].title(),
-                           "p": pr["NOMBPROV"].title(), "d": pr["IDDPTO"]}
-        redondear = lambda c: [redondear(x) for x in c] if isinstance(c[0], list) \
-            else [round(c[0], 3), round(c[1], 3)]
-        if f["geometry"]:  # algunos distritos vienen sin geometria
-            f["geometry"]["coordinates"] = redondear(f["geometry"]["coordinates"])
-    geo.pop("crs", None)
-    (DOCS / "distritos.geojson").write_text(json.dumps(geo, separators=(",", ":")),
-                                            encoding="utf-8")
-    nac = [a for a in abandono if a["dep"] == "PE"]
-    print(json.dumps(nac), datos["partido"], datos["paralizadas"], len(mapa))
+    (DOCS / "mapa.json").write_text(json.dumps(mapa3d(m, d, inversiones(), centroides()),
+                                               ensure_ascii=False, separators=(",", ":")),
+                                    encoding="utf-8")
 
 
 if __name__ == "__main__":
+    distritos()
     main()

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Obras de salida · ciclo político de la inversión municipal en el Perú</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <style>
   :root {
     color-scheme: light;
@@ -37,7 +38,29 @@
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
   .chart { width: 100%; height: 340px; }
-  #mapa { height: 560px; }
+  .hero { display: grid; grid-template-columns: 560px 1fr; gap: 28px; align-items: center;
+          background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 26px; }
+  .hero-mapa { perspective: 1500px; }
+  #hmapa { width: 100%; height: auto; display: block; transform: rotateX(24deg) rotateZ(-4deg);
+           transform-origin: 50% 70%; filter: drop-shadow(0 22px 18px rgba(30, 40, 60, .22)); }
+  #hmapa path { transition: stroke-width .15s; } #hmapa path:hover { stroke: #0b0b0b; stroke-width: 1.2; }
+  .h-anio { font-size: 76px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .h-etapa { display: inline-block; margin: 8px 0 18px; padding: 4px 12px; border-radius: 99px; color: #fff;
+             font-size: 13px; font-weight: 600; transition: background .6s; }
+  .h-big { display: flex; align-items: baseline; gap: 12px; }
+  #h-num { font-size: 58px; font-weight: 800; letter-spacing: -0.03em; }
+  .h-big small { font-size: 15px; color: var(--text-secondary); max-width: 210px; line-height: 1.3; }
+  .h-dist { font-size: 15px; color: var(--text-secondary); margin: 4px 0 14px; }
+  #h-sierra { width: 100%; height: auto; display: block; }
+  .h-ctrl { display: flex; align-items: center; gap: 18px; margin-top: 10px; flex-wrap: wrap; }
+  .h-ctrl button { font: inherit; font-weight: 600; padding: 7px 16px; border-radius: 99px; cursor: pointer;
+                   border: 0; background: #0b0b0b; color: #fff; min-width: 120px; }
+  .tip { position: fixed; z-index: 20; pointer-events: none; background: #fff; border: 1px solid var(--border);
+         border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.1); display: none; }
+  @media (max-width: 1000px) { .hero { grid-template-columns: 1fr; } }
+  .recuadro { background: #f3f7fd; border-left: 4px solid var(--con); border-radius: 6px; padding: 14px 18px;
+              margin-top: 16px; max-width: 900px; }
+  .recuadro p { margin: 6px 0; }
   .texto { max-width: 820px; }
   .texto li { margin-bottom: 8px; }
   a { color: var(--con); }
@@ -80,11 +103,29 @@
       <div class="v" id="k4"></div><div class="c" id="k4c"></div></div>
   </div>
 
-  <h2>1. La ejecución mes a mes</h2>
+  <h2>1. El alcalde deja la plata de obras para el final</h2>
+  <p class="nota">Cada distrito se compara consigo mismo. De cada S/ 100 que su municipalidad pagó en obras durante
+    los cuatro años de la gestión, ¿cuántos pagó en ese año? Si repartiera parejo serían S/ 25 por año.</p>
+  <div class="hero">
+    <div class="hero-mapa"><svg id="hmapa" viewBox="0 0 560 760" role="img"
+      aria-label="Mapa de distritos del Perú coloreado según la parte del gasto en obras de la gestión que se pagó en el año elegido"></svg></div>
+    <div>
+      <div class="h-anio" id="h-anio"></div>
+      <div class="h-etapa" id="h-etapa"></div>
+      <div class="h-big"><span id="h-num"></span><small>de cada S/ 100 que la gestión pagó en obras</small></div>
+      <div class="h-dist" id="h-dist"></div>
+      <svg id="h-sierra" role="img" aria-label="Gasto de cada año como parte de su gestión, 2011 a 2022"></svg>
+      <div class="h-ctrl"><button id="h-play" type="button">▶ Ver el ciclo</button><svg id="h-ley" width="240" height="30"></svg></div>
+      <p class="nota">* año de elección. Haz clic en un año para fijarlo; pasa el mouse por un distrito para ver su reparto.</p>
+    </div>
+  </div>
+  <div class="tip" id="tip"></div>
+
+  <h2>2. La ejecución mes a mes</h2>
   <p class="nota" id="t-serie"></p>
   <div class="card"><div id="serie" class="chart" style="height:380px"></div></div>
 
-  <h2>2. ¿Se ejecuta más al final de la gestión?</h2>
+  <h2>3. ¿Se ejecuta más al final de la gestión?</h2>
   <div class="grid">
     <div class="card">
       <h3>Meses alrededor de la elección, con y sin reelección</h3>
@@ -97,7 +138,18 @@
       <div id="anios" class="chart"></div></div>
   </div>
 
-  <h2>3. ¿Qué pasa con las obras cuando cambia el alcalde?</h2>
+  <div class="recuadro">
+    <b>¿Por qué cambia todo con la reelección?</b>
+    <p>En el Perú los partidos son débiles y la política municipal gira alrededor de la persona del alcalde, no de su
+      organización. Hasta 2014 el alcalde podía volver a postular. Por eso le convenía <b>empezar obras antes de la
+      elección</b>, para mostrarlas en campaña. En esos cuatro meses se empezaban 36% más obras nuevas.</p>
+    <p>Desde 2015 no puede reelegirse. Ya no gana nada con empezar obras antes de votar, y ese aumento casi desaparece
+      (+4%). Pero sabe que se va, y en sus <b>últimos tres meses acelera los pagos</b>. Gasta 40% más que en los mismos
+      meses de otros años para cerrar contratos, inaugurar o usar el presupuesto que le queda. Como el sucesor no le
+      debe nada, muchas de esas obras quedan sin pagar.</p>
+  </div>
+
+  <h2>4. ¿Qué pasa con las obras cuando cambia el alcalde?</h2>
   <div class="grid">
     <div class="card">
       <h3>Obras inconclusas que dejan de recibir pagos</h3>
@@ -109,13 +161,13 @@
       <div id="partido" class="chart"></div></div>
   </div>
 
-  <h2>4. Mapa del abandono</h2>
-  <p class="nota" id="t-mapa"></p>
-  <div class="card"><div id="mapa"></div></div>
-
   <section class="texto">
     <h2>Hallazgos</h2>
     <ol id="hallazgos">
+      <li><b>El alcalde deja la plata de obras para el final.</b> De cada S/ 100 que las municipalidades pagaron en obras
+        durante la gestión 2019–2022, S/ 21 se pagaron en el primer año y S/ 34 en el último, el de la elección. En
+        ese año el 67% de los distritos gastó más que si hubiera repartido parejo. En la gestión 2011–2014, cuando
+        había reelección, el último año se llevaba S/ 29.</li>
       <li><b>Cuando cambia el alcalde se abandonan más obras.</b> En las cuatro transiciones (2011, 2015, 2019 y 2023)
         entre 28% y 32% de las obras inconclusas deja de recibir pagos en los dos años siguientes. En años sin cambio de
         gestión la cifra es de 18% a 22%.</li>
@@ -189,16 +241,17 @@ const eje = (o = {}) => ({ gridcolor: "#eeede9", zerolinecolor: "#c9c8c3", linec
 const fmt = n => n.toLocaleString("es-PE");
 const pct = (x, sig = true) => (sig && x > 0 ? "+" : "") + Math.round(x) + "%";
 
-let D, GEO;
+let D, M, GEO;
 const $ = id => document.getElementById(id);
 
-Promise.all([fetch("datos.json").then(r => r.json()), fetch("distritos.geojson").then(r => r.json())])
-  .then(([d, g]) => {
-    D = d; GEO = g;
+Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json())))
+  .then(([d, g, geo]) => {
+    D = d; M = g; GEO = geo;
     $("f-dep").innerHTML = `<option value="PE">Todo el Perú</option>` +
       Object.entries(D.departamentos).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
     $("paral").textContent = fmt(D.paralizadas);
     ["f-dep", "f-trans", "f-ind"].forEach(id => $(id).addEventListener("change", dibujar));
+    iniciarHero();
     dibujar();
   });
 
@@ -218,7 +271,7 @@ function dibujar() {
   anios(dep);
   abandono(dep, T);
   partido();
-  mapa(dep, T);
+  hero();
 }
 
 function kpis(dep, T) {
@@ -319,26 +372,116 @@ function partido() {
       xaxis: eje({ showgrid: false }) }, CONF);
 }
 
-function mapa(dep, T) {
-  $("t-mapa").textContent = `% de obras inconclusas abandonadas por distrito en el cambio de gestión de enero de ${T} · ${nombreDep(dep)}. Gris = sin obras inconclusas con costo conocido.`;
-  const feats = GEO.features.filter(f => f.geometry && (dep === "PE" || f.properties.d === dep));
-  const con = feats.filter(f => D.mapa[f.properties.u] && D.mapa[f.properties.u][T]);
-  const sinDato = feats.filter(f => !(D.mapa[f.properties.u] && D.mapa[f.properties.u][T]));
-  const geo = { type: "FeatureCollection", features: feats };
-  Plotly.react("mapa", [
-    { type: "choropleth", geojson: geo, featureidkey: "properties.u", locations: sinDato.map(f => f.properties.u),
-      z: sinDato.map(() => 0), colorscale: [[0, "#e9e8e4"], [1, "#e9e8e4"]], showscale: false,
-      marker: { line: { color: "#fff", width: 0.3 } },
-      text: sinDato.map(f => `${f.properties.n} (${f.properties.p})`), hovertemplate: "%{text}<br>sin datos<extra></extra>" },
-    { type: "choropleth", geojson: geo, featureidkey: "properties.u", locations: con.map(f => f.properties.u),
-      z: con.map(f => D.mapa[f.properties.u][T][0]), zmin: 0, zmax: 100,
-      colorscale: [[0, "#cde2fb"], [0.25, "#86b6ef"], [0.5, "#3987e5"], [0.75, "#1c5cab"], [1, "#0d366b"]],
-      marker: { line: { color: "#fff", width: 0.3 } },
-      colorbar: { title: { text: "% abandonadas", side: "right" }, ticksuffix: "%", thickness: 12, len: 0.6 },
-      customdata: con.map(f => [f.properties.n, f.properties.p, D.mapa[f.properties.u][T][1]]),
-      hovertemplate: "<b>%{customdata[0]}</b> (%{customdata[1]})<br>%{z}% abandonadas de %{customdata[2]} obras inconclusas<extra></extra>" }
-  ], { ...BASE, margin: { t: 0, r: 0, b: 0, l: 0 },
-    geo: { fitbounds: "locations", visible: false, projection: { type: "mercator" }, bgcolor: "rgba(0,0,0,0)" } }, CONF);
+// ---- Mapa principal: de cada S/ 100 de la gestion, cuanto se gasta cada anio ----
+const H_ANIOS = d3.range(2011, 2023);           // tres gestiones completas
+const H_ELEC = new Set([2014, 2018, 2022]);
+const hColor = d3.scaleDiverging().domain([10, 25, 40]).clamp(true)
+  .interpolator(d3.interpolateRgbBasis(["#1c5cab", "#86b6ef", "#ecebe7", "#f3a27d", "#c4471b"]));
+let H = { anio: 2022, timer: null };
+
+function iniciarHero() {
+  H.gasto = new Map(M.columnas.map(c => [c.u, c.g]));
+  H.svg = d3.select("#hmapa");
+  H.paths = H.svg.append("g").selectAll("path").data(GEO.features).join("path")
+    .attr("stroke", "#fff").attr("stroke-width", 0.2)
+    .on("mousemove", (e, f) => {
+      const v = H.parte.get(f.properties.u);
+      const ini = inicioGestion(H.anio);
+      $("tip").style.display = "block";
+      $("tip").style.left = e.clientX + 14 + "px"; $("tip").style.top = e.clientY + 14 + "px";
+      $("tip").innerHTML = `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (v
+        ? `De cada S/ 100 de la gestión ${ini}–${ini + 3}:<br>` + v.map((x, i) =>
+            `<span style="${ini + i === H.anio ? "font-weight:700" : "color:#7a7974"}">${ini + i}: S/ ${Math.round(x)}</span>`).join(" · ")
+        : "sin gasto en obras");
+    })
+    .on("mouseleave", () => $("tip").style.display = "none");
+  // Leyenda
+  const ley = d3.select("#h-ley"), x = d3.scaleLinear().domain([10, 40]).range([4, 236]);
+  ley.selectAll("rect").data(d3.range(10, 40)).join("rect").attr("x", d => x(d)).attr("y", 0)
+    .attr("width", 8.4).attr("height", 10).attr("fill", d => hColor(d + 0.5));
+  ley.selectAll("text").data([[10, "S/ 10 o menos", "start"], [25, "S/ 25 = parejo", "middle"], [40, "S/ 40 o más", "end"]])
+    .join("text").attr("x", d => x(d[0])).attr("y", 26).attr("text-anchor", d => d[2])
+    .attr("font-size", 11).attr("fill", "#52514e").text(d => d[1]);
+  $("h-play").addEventListener("click", () => H.timer ? pararHero() : animarHero());
+  hero();
+  // Arranca solo la primera vez que el mapa entra en pantalla.
+  new IntersectionObserver((e, o) => { if (e[0].isIntersecting) { o.disconnect(); H.anio = 2010; animarHero(); } },
+    { threshold: 0.5 }).observe($("hmapa"));
+}
+
+const inicioGestion = a => 2011 + 4 * Math.floor((a - 2011) / 4);
+
+function animarHero() {
+  $("h-play").textContent = "❚❚ Pausa";
+  const paso = () => { H.anio = H.anio >= 2022 ? 2011 : H.anio + 1; hero(true); };
+  paso(); H.timer = setInterval(paso, 1500);
+}
+function pararHero() { clearInterval(H.timer); H.timer = null; $("h-play").textContent = "▶ Ver el ciclo"; }
+
+function hero(animado = false) {
+  if (!H.svg) return;
+  const dep = $("f-dep").value, A = H.anio, ini = inicioGestion(A), j = A - ini, k0 = ini - 2008;
+  const feats = GEO.features.filter(f => dep === "PE" || f.properties.u.slice(0, 2) === dep);
+  // Proyeccion: se reajusta solo si cambia el departamento.
+  if (H.dep !== dep) {
+    H.dep = dep;
+    const proj = d3.geoMercator().fitExtent([[10, 10], [550, 750]], { type: "FeatureCollection", features: feats });
+    const path = d3.geoPath(proj);
+    H.paths.attr("d", f => feats.includes(f) ? path(f) : null);
+  }
+  // Parte de la gestion que cada distrito gasto cada anio.
+  H.parte = new Map(); const tot = [0, 0, 0, 0];
+  for (const f of feats) {
+    const g = H.gasto.get(f.properties.u); if (!g) continue;
+    const t = g.slice(k0, k0 + 4), s = d3.sum(t);
+    t.forEach((v, i) => tot[i] += v);
+    if (s > 0.5) H.parte.set(f.properties.u, t.map(v => 100 * v / s));
+  }
+  const nac = 100 * tot[j] / d3.sum(tot);
+  const vals = [...H.parte.values()].map(p => p[j]);
+  (animado ? H.paths.transition().duration(900) : H.paths)
+    .attr("fill", f => H.parte.has(f.properties.u) ? hColor(H.parte.get(f.properties.u)[j]) : "#f3f2ee");
+  $("h-anio").textContent = A;
+  const etapa = j === 3 ? "Año 4 · elección municipal" : j === 0 ? "Año 1 · entra el nuevo alcalde" : `Año ${j + 1} de la gestión`;
+  $("h-etapa").textContent = `${etapa} · gestión ${ini}–${ini + 3}`;
+  $("h-etapa").style.background = j === 3 ? "#c4471b" : j === 0 ? "#1c5cab" : "#52514e";
+  $("h-num").textContent = "S/ " + Math.round(nac);
+  $("h-dist").innerHTML = `<b>${Math.round(100 * d3.mean(vals, v => v > 25))}%</b> de los distritos gastó más que lo parejo · ${nombreDep(dep)}`;
+  sierra(dep, A);
+}
+
+// Diente de sierra: S/ de cada 100 por anio, con el anio actual marcado.
+function sierra(dep, A) {
+  const cols = M.columnas.filter(c => dep === "PE" || c.u.slice(0, 2) === dep);
+  const serie = H_ANIOS.map(a => {
+    const k0 = inicioGestion(a) - 2008, s = d3.sum(cols, c => d3.sum(c.g.slice(k0, k0 + 4)));
+    return { a, v: 100 * d3.sum(cols, c => c.g[a - 2008]) / s };
+  });
+  const w = 520, h = 190, m = { t: 14, r: 12, b: 26, l: 30 };
+  const x = d3.scalePoint().domain(H_ANIOS).range([m.l, w - m.r]).padding(0.3);
+  const y = d3.scaleLinear().domain([10, Math.max(40, d3.max(serie, d => d.v) + 2)]).range([h - m.b, m.t]);
+  const svg = d3.select("#h-sierra").attr("viewBox", `0 0 ${w} ${h}`);
+  svg.selectAll("*").remove();
+  [2011, 2019].forEach(g => svg.append("rect").attr("x", x(g) - x.step() / 2).attr("width", x.step() * 4)
+    .attr("y", m.t).attr("height", h - m.t - m.b).attr("fill", "#f3f2ee"));
+  svg.append("line").attr("x1", m.l).attr("x2", w - m.r).attr("y1", y(25)).attr("y2", y(25))
+    .attr("stroke", "#7a7974").attr("stroke-dasharray", "3 3");
+  svg.append("text").attr("x", m.l + 4).attr("y", y(25) + 13).attr("text-anchor", "start").attr("font-size", 11)
+    .attr("fill", "#7a7974").text("parejo = S/ 25");
+  [0, 4, 8].forEach(i => svg.append("path").datum(serie.slice(i, i + 4))
+    .attr("d", d3.line(d => x(d.a), d => y(d.v))).attr("fill", "none").attr("stroke", "#0b0b0b").attr("stroke-width", 2));
+  svg.selectAll("circle").data(serie).join("circle").attr("cx", d => x(d.a)).attr("cy", d => y(d.v))
+    .attr("r", d => d.a === A ? 8 : 4.5).attr("fill", d => hColor(d.v)).attr("stroke", "#0b0b0b")
+    .attr("stroke-width", d => d.a === A ? 2 : 1).style("cursor", "pointer")
+    .on("click", (e, d) => { pararHero(); H.anio = d.a; hero(true); })
+    .append("title").text(d => `${d.a}: S/ ${d.v.toFixed(1)} de cada 100`);
+  svg.selectAll(".ta").data(serie).join("text").attr("class", "ta").attr("x", d => x(d.a)).attr("y", h - 8)
+    .attr("text-anchor", "middle").attr("font-size", 11).attr("font-weight", d => H_ELEC.has(d.a) ? 700 : 400)
+    .attr("fill", d => d.a === A ? "#0b0b0b" : "#7a7974").text(d => H_ELEC.has(d.a) ? d.a + "*" : String(d.a).slice(2))
+    .style("cursor", "pointer").on("click", (e, d) => { pararHero(); H.anio = d.a; hero(true); });
+  svg.append("g").attr("transform", `translate(${m.l},0)`)
+    .call(d3.axisLeft(y).ticks(4).tickFormat(d => "S/ " + d).tickSize(0)).call(g => g.select(".domain").remove())
+    .selectAll("text").attr("font-size", 10).attr("fill", "#7a7974");
 }
 </script>
 </body>
