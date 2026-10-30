@@ -3,10 +3,10 @@
 - DETALLE_INVERSIONES.csv: cada inversion publica con ubicacion (lat/lon) y fechas.
 - {anio}-Gasto*.csv: gasto de todo el Estado (3-10 GB por anio). Se descarga a una
   carpeta temporal y se agrega a municipalidad x mes x rubro x funcion, y a pagos por obra.
-- {anio}-Transferencias.csv y {anio}-Ingreso.csv: transferencias e ingresos por municipalidad.
+- {anio}-Transferencias.csv: transferencias a cada municipalidad (canon, FONCOMUN...), 2004-2026.
 
 Uso: python scripts/obtener_datos.py inversiones
-     python scripts/obtener_datos.py gasto|transferencias|ingreso <carpeta_temporal> 2022 ...
+     python scripts/obtener_datos.py gasto|transferencias <carpeta_temporal> 2022 ...
 """
 import subprocess
 import sys
@@ -84,23 +84,6 @@ def transferencias(anio, carpeta):
     print(f"{anio}: transferencias, {df['SEC_EJEC'].nunique():,} municipalidades")
 
 
-def ingreso(anio, carpeta):
-    # Ingresos recaudados por cada municipalidad (impuestos propios, transferencias...).
-    csv = descargar(f"{anio}-Ingreso.csv", carpeta)
-    partes = []
-    for ch in pd.read_csv(csv, dtype=str, chunksize=500_000, encoding="utf-8-sig"):
-        ch = ch[ch["NIVEL_GOBIERNO"] == "M"].copy()
-        ch["UBIGEO"] = ubigeo(ch)
-        ch["RECAUDADO"] = ch["MONTO_RECAUDADO"].astype(float)
-        partes.append(ch.groupby(["ANO_DOC", "MES_DOC", "SEC_EJEC", "UBIGEO", "RUBRO_NOMBRE",
-                                  "TIPO_INGRESO_NOMBRE"], as_index=False)["RECAUDADO"].sum())
-    df = pd.concat(partes).groupby(["ANO_DOC", "MES_DOC", "SEC_EJEC", "UBIGEO", "RUBRO_NOMBRE",
-                                    "TIPO_INGRESO_NOMBRE"], as_index=False)["RECAUDADO"].sum()
-    PROC.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(PROC / f"ingreso_{anio}.parquet", index=False)
-    print(f"{anio}: ingreso, {df['SEC_EJEC'].nunique():,} municipalidades")
-
-
 def gasto(anio, carpeta):
     # Los anios cerrados vienen en formato mensual (MES_EJE); 2025 y 2026, en formato
     # "Devengado-Diario" con una columna por mes. Los {anio}-Gasto.csv de 2016 y 2017
@@ -159,6 +142,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "inversiones":
         inversiones()
     else:
-        fuente = {"gasto": gasto, "transferencias": transferencias, "ingreso": ingreso}
+        fuente = {"gasto": gasto, "transferencias": transferencias}
         for a in sys.argv[3:]:
             fuente[sys.argv[1]](int(a), sys.argv[2])

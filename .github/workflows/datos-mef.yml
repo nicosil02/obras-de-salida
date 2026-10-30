@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       fuente:
-        description: "gasto, transferencias o ingreso"
+        description: "gasto o transferencias"
         required: true
         default: gasto
       anios:
