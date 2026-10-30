@@ -113,7 +113,7 @@ def elecciones():
     se pasa al ubigeo INEI cruzando por nombre de departamento, provincia y distrito."""
     # Nombre -> ubigeo INEI: mapa de distritos y, para nombres antiguos o distritos nuevos,
     # las inversiones del MEF.
-    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     g = pd.DataFrame([f["properties"] for f in geo["features"]])
     g = g.rename(columns={"NOMBDEP": "d", "NOMBPROV": "p", "NOMBDIST": "n", "IDDIST": "u"})
     mef = pd.read_csv(ORIG / "DETALLE_INVERSIONES.csv", dtype=str,
@@ -159,7 +159,7 @@ def relaciones():
     a["alcalde"] = a["CARGO"].str.startswith("ALCALDE")
     a["partido"] = clave(a["ORGANIZACIONPOLITICA"])
     # Ubigeo INEI por nombre (como en elecciones); la provincial gobierna la capital PPPP01.
-    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     g = pd.DataFrame([f["properties"] for f in geo["features"]])
     a_inei = pd.Series(g["IDDIST"].values, index=clave(g["NOMBDEP"], g["NOMBPROV"], g["NOMBDIST"]))
     a_prov = (a_inei.str[:4] + "01").groupby(a_inei.index.str.rsplit("|", n=1).str[0]).first()

@@ -7,9 +7,12 @@
 - ERM{anio}_Municipal_{Distrital|Provincial}.csv: resultados oficiales por mesa de la ONPE
   (Plataforma Nacional de Datos Abiertos), elecciones municipales 2006-2022.
 - Autoridades_Electas_20251113.xls: alcaldes y regidores electos 2014-2022 del JNE, con DNI.
+- distritos_inei.geojson: limites distritales del INEI (1,874 distritos, version de GeoGPS Peru
+  publicada en github.com/nicosil02/Dashboard), simplificados para la web.
 
 Uso: python scripts/obtener_datos.py inversiones
      python scripts/obtener_datos.py elecciones
+     python scripts/obtener_datos.py limites
      python scripts/obtener_datos.py gasto|transferencias <carpeta_temporal> 2022 ...
 """
 import subprocess
@@ -165,11 +168,36 @@ def elecciones():
                     "https://www.datosabiertos.gob.pe/sites/default/files/Autoridades_Electas_20251113.xls"], check=True)
 
 
+def limites():
+    import json
+    import shapefile  # pyshp
+    from shapely.geometry import mapping, shape
+    L = ORIG / "limites"
+    L.mkdir(parents=True, exist_ok=True)
+    base = "https://github.com/nicosil02/Dashboard/raw/HEAD/Distrital/DISTRITOS_inei_geogpsperu_suyopomalia."
+    for ext in ["shp", "shx", "dbf", "prj", "cpg"]:
+        subprocess.run(["curl", "-sSL", "-o", str(L / f"DISTRITOS_inei.{ext}"), base + ext], check=True)
+    r = shapefile.Reader(str(L / "DISTRITOS_inei.shp"), encoding="utf-8")
+    feats = []
+    for sr in r.iterShapeRecords():
+        u = sr.record["UBIGEO"]
+        # ~300 m de tolerancia: suficiente para un mapa nacional y liviano para la web.
+        g = shape(sr.shape.__geo_interface__).simplify(0.003, preserve_topology=True)
+        feats.append({"type": "Feature", "geometry": mapping(g), "properties": {
+            "IDDIST": u, "IDPROV": u[:4], "IDDPTO": u[:2], "NOMBDIST": sr.record["NOMBDIST"],
+            "NOMBPROV": sr.record["NOMBPROV"], "NOMBDEP": sr.record["NOMBDEP"]}})
+    (ORIG / "distritos_inei.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}),
+                                                 encoding="utf-8")
+    print(f"distritos: {len(feats)}")
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "inversiones":
         inversiones()
     elif sys.argv[1] == "elecciones":
         elecciones()
+    elif sys.argv[1] == "limites":
+        limites()
     else:
         fuente = {"gasto": gasto, "transferencias": transferencias}
         for a in sys.argv[3:]:

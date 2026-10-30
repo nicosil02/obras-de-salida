@@ -35,7 +35,7 @@ def inversiones():
 
 def centroides():
     """Centro aproximado de cada distrito (promedio de los vertices del poligono)."""
-    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     cen = {}
     for f in geo["features"]:
         g = f["geometry"]
@@ -48,12 +48,16 @@ def centroides():
     return cen.astype({"lon": float, "lat": float})
 
 
+# En 2014 se creo la provincia de Putumayo y el INEI recodifico dos distritos de Maynas.
+RECODIFICA = {"160109": "160801", "160114": "160803"}
+
+
 def mapa3d(m, d, inv, cen):
     """Columnas por distrito y anio (gasto y obras con pagos) y puntos de obras abandonadas."""
     m = m.assign(anio=m["t"] // 12)
     # Obras distintas con pagos en el anio (no la suma de los meses).
     p = A.pagos()
-    p["UBIGEO"] = p["UBIGEO"].where(p["UBIGEO"].str[-2:] != "00", p["UBIGEO"].str[:4] + "01")
+    p["UBIGEO"] = p["UBIGEO"].where(p["UBIGEO"].str[-2:] != "00", p["UBIGEO"].str[:4] + "01").replace(RECODIFICA)
     p = p[p["t"] // 12 >= 2007]
     obras = p.groupby(["UBIGEO", p["t"] // 12])["obra"].nunique()
     gasto = p.groupby(["UBIGEO", p["t"] // 12])["DEVENGADO"].sum() / 1e6
@@ -61,10 +65,18 @@ def mapa3d(m, d, inv, cen):
     # 2007 esta incompleto: solo cuentan las municipalidades que ya reportaban en enero.
     g7 = pd.read_parquet(PROC / "gasto" / "gasto_municipal_2007.parquet")
     u7 = g7.loc[(g7["MES"].astype(int) == 1) & (g7["DEVENGADO"] > 0), "UBIGEO"]
-    enero07 = set(u7.where(u7.str[-2:] != "00", u7.str[:4] + "01"))
+    enero07 = set(u7.where(u7.str[-2:] != "00", u7.str[:4] + "01").replace(RECODIFICA))
+    # Distritos creados despues del mapa del INEI: entran en los totales aunque no se dibujen.
+    nom = pd.read_csv(ORIG / "DETALLE_INVERSIONES.csv", dtype=str, usecols=["UBIGEO", "PROVINCIA", "DISTRITO"])         .dropna().drop_duplicates("UBIGEO").set_index("UBIGEO")
     col = []
-    for u in sorted(set(obras.index.get_level_values(0)) & set(cen.index)):
-        col.append({"u": u, "n": cen.at[u, "nombre"], "x": round(cen.at[u, "lon"], 3), "y": round(cen.at[u, "lat"], 3),
+    for u in sorted(set(obras.index.get_level_values(0))):
+        if u in cen.index:
+            n, x, y = cen.at[u, "nombre"], round(cen.at[u, "lon"], 3), round(cen.at[u, "lat"], 3)
+        elif u in nom.index:
+            n, x, y = f"{nom.at[u, 'DISTRITO'].title()} ({nom.at[u, 'PROVINCIA'].title()})", None, None
+        else:
+            continue
+        col.append({"u": u, "n": n, "x": x, "y": y,
                     "g": [round(float(gasto.get((u, a), 0)), 2) for a in anios],
                     "o": [int(obras.get((u, a), 0)) for a in anios], "e7": int(u in enero07)})
     # Obras inconclusas abandonadas en cada cambio de alcalde, con sus coordenadas; las que
@@ -81,7 +93,7 @@ def mapa3d(m, d, inv, cen):
                "n": str(r.NOMBRE_INVERSION)[:90].capitalize() if isinstance(r.NOMBRE_INVERSION, str) else "Obra sin nombre",
                "c": round(r.costo / 1e6, 2), "p": round(r.pagado_previo / r.costo * 100)}
               for r in ab.itertuples()]
-    print(f"mapa: {len(col)} distritos, {len(puntos)} obras abandonadas ({sin.mean():.0%} sin coordenadas)")
+    print(f"mapa: {len(col)} distritos ({sum(c['x'] is None for c in col)} sin poligono), {len(puntos)} obras abandonadas ({sin.mean():.0%} sin coordenadas)")
     return {"anios": anios, "columnas": col, "abandonadas": puntos}
 
 
@@ -125,7 +137,7 @@ def relaciones(d):
 
 def distritos():
     """Geojson liviano para el mapa: ubigeo, nombres y coordenadas con 3 decimales (~100 m)."""
-    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     redondear = lambda c: [redondear(x) for x in c] if isinstance(c[0], list)         else [round(c[0], 3), round(c[1], 3)]
     geo["features"] = [f for f in geo["features"] if f["geometry"]]  # algunos vienen sin geometria
     for f in geo["features"]:
@@ -190,7 +202,7 @@ def main():
         if len(serie[dep]["gasto"]) != len(meses):
             raise ValueError(f"serie incompleta: {dep}")
 
-    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     deps = {f["properties"]["IDDPTO"]: f["properties"]["NOMBDEP"].title() for f in geo["features"]}
     datos = {
         "meses": [f"{t // 12}-{t % 12 + 1:02d}" for t in meses],

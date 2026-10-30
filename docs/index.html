@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Obras de salida. Gasto municipal en obras y cambio de alcalde, Perú 2007-2026</title>
-<meta name="description" content="En su último año, los alcaldes del Perú gastan 60% más en obras que en su primero. Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.">
+<meta name="description" content="En su último año, los alcaldes del Perú gastan 61% más en obras que en su primero. Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
@@ -83,7 +83,7 @@
 <body>
 <header>
   <h1>Obras de salida</h1>
-  <p>En su último año, <b>los alcaldes gastan 60% más en obras que en su primero</b>. Cuando se van,
+  <p>En su último año, <b>los alcaldes gastan 61% más en obras que en su primero</b>. Cuando se van,
     <b>3 de cada 10 obras a medias se quedan sin pagar</b>.</p>
 </header>
 
@@ -167,10 +167,10 @@
 
     <div class="texto" id="metodo">
       <div><h2>Hallazgos</h2><ol>
-        <li><b>El último año es el de más gasto.</b> En la gestión 2019-2022 las municipalidades pagaron S/ 12,215 millones en obras en su primer año y S/ 19,556 millones en el último (60% más). Pasa en las cuatro gestiones medidas.</li>
+        <li><b>El último año es el de más gasto.</b> En la gestión 2019-2022 las municipalidades pagaron S/ 12,616 millones en obras en su primer año y S/ 20,292 millones en el último (61% más). Pasa en las cuatro gestiones medidas.</li>
         <li><b>Pasa en 7 de cada 10 distritos.</b> El 70% gastó más en 2022 que en 2019.</li>
         <li><b>Al cambiar de alcalde, entre 28% y 32% de las obras a medias se queda sin pagos</b>, frente a 18% a 22% en años sin cambio.</li>
-        <li><b>Importa quién entra.</b> Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28.5%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).</li>
+        <li><b>Importa quién entra.</b> Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28.4%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).</li>
       </ol></div>
       <div><h2>Cómo se calculó</h2><ul>
         <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2007-2026.</li>
@@ -192,12 +192,13 @@
         <li><b>Alcaldes y regidores electos 2014-2022.</b> JNE, <a href="https://www.datosabiertos.gob.pe/dataset/autoridades-electas-en-procesos-electorales-jurado-nacional-de-elecciones">autoridades electas</a>, con DNI para seguir a cada persona.</li>
         <li><b>Obras paralizadas.</b> Contraloría, <a href="https://www.gob.pe/institucion/contraloria/informes-publicaciones/8489152-informe-de-obras-paralizadas-en-el-territorio-nacional-a-junio-de-2026">informe a junio de 2026</a>
           (<span id="paral"></span> obras municipales).</li>
-        <li><b>Mapa de distritos.</b> <a href="https://github.com/juaneladio/peru-geojson">peru-geojson</a>, con códigos de ubigeo del INEI.</li>
+        <li><b>Mapa de distritos.</b> Límites distritales del INEI (1,874 distritos), en la versión de GeoGPS Perú publicada en <a href="https://github.com/nicosil02/Dashboard/tree/main/Distrital">nicosil02/Dashboard</a>.</li>
       </ul></div>
       <div><h2>Limitaciones</h2><ul>
         <li>Muestra asociación, no causalidad.</li>
         <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
-        <li>En 2007 muchas municipalidades entraron al SIAF a mitad de año. La gestión 2007-2010 usa solo las 1,176 que reportaban desde enero.</li>
+        <li>En 2007 muchas municipalidades entraron al SIAF a mitad de año. La gestión 2007-2010 usa solo las 1,181 que reportaban desde enero.</li>
+        <li>17 distritos creados entre 2020 y 2022 (como Alto Trujillo) no tienen polígono en el mapa del INEI: su gasto sí entra en los totales, pero no se dibujan.</li>
         <li>La gestión 2023-2026 sigue en curso (datos hasta septiembre de 2026).</li>
         <li>Elecciones y autoridades se cruzan con los distritos por nombre; entre 1% y 3% no calzan. Se usa la elección original, no las nuevas elecciones o complementarias.</li>
         <li>Pocas municipalidades tienen un alcalde que fue regidor del que sale (31) o un exalcalde que vuelve (83).</li>
@@ -278,7 +279,7 @@ function actualizar() {
   const f = s.sel && GEO.features.find(f => f.properties.u === distrito);
   $("chip").hidden = !s.sel;
   if (s.sel) {
-    $("chip").innerHTML = `Viendo <b>${f.properties.n}</b> (${f.properties.p})<br><button type="button" id="quitar">Ver todos los distritos</button>`;
+    $("chip").innerHTML = `Viendo <b>${s.sel.n}</b><br><button type="button" id="quitar">Ver todos los distritos</button>`;
     $("quitar").onclick = () => verDistrito(distrito);
   }
   kpis(s); anual(s, f); mapa(s); abandono(s); relac(); ranking(s);
@@ -298,7 +299,7 @@ function kpis(s) {
 
 function anual(s, f) {
   const fuente = s.sel ? [s.sel] : s.cols;
-  $("t-anual").textContent = s.sel ? `Gasto en obras de ${f.properties.n} (${f.properties.p}), año por año`
+  $("t-anual").textContent = s.sel ? `Gasto en obras de ${s.sel.n}, año por año`
     : "Cada gestión termina con su año de más gasto en obras";
   $("s-anual").textContent = s.sel ? "Millones de soles. Haz clic otra vez en el distrito para volver al total."
     : "Gasto municipal en obras por año, en millones de soles. Haz clic en una barra para elegir esa gestión.";
