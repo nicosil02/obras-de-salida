@@ -103,8 +103,14 @@ def ingreso(anio, carpeta):
 
 def gasto(anio, carpeta):
     # Los anios cerrados vienen en formato mensual (MES_EJE); 2025 y 2026, en formato
-    # "Devengado-Diario" con una columna por mes.
-    nombre = f"{anio}-Gasto.csv" if anio < 2025 else f"{anio}-Gasto-Devengado-Diario.csv"
+    # "Devengado-Diario" con una columna por mes. Los {anio}-Gasto.csv de 2016 y 2017
+    # vienen incompletos en origen (faltan meses municipales): se usa {anio}-Gasto-Devengado,
+    # que trae el anio completo con una columna por mes.
+    nombre = f"{anio}-Gasto.csv"
+    if anio in (2016, 2017):
+        nombre = f"{anio}-Gasto-Devengado.csv"
+    elif anio >= 2025:
+        nombre = f"{anio}-Gasto-Devengado-Diario.csv"
     csv = descargar(nombre, carpeta)
     partes, obras = [], []
     lector = pd.read_csv(csv, dtype=str, chunksize=500_000, encoding="utf-8-sig")
