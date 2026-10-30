@@ -308,7 +308,7 @@ function anual(s, f) {
       .attr("fill", "#f3f3f0").attr("rx", 4).attr("x", x(ini) - 8);
   }
   svg.select(".fondo rect").transition().duration(DUR).attr("x", x(ini) - 8);
-  svg.select(".eje").attr("transform", `translate(${m.l},0)`).transition().duration(DUR)
+  svg.select(".eje").attr("transform", `translate(${m.l},0)`)
     .call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(d => fmt(d)))
     .call(g => g.select(".domain").remove()).call(g => g.selectAll("line").attr("stroke", "#ececea"))
     .call(g => g.selectAll("text").attr("fill", C.tinta3).attr("font-size", 12));
