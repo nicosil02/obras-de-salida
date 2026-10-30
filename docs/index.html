@@ -550,7 +550,7 @@ function mapa(s) {
       ? [[f.geometry.coordinates[0]]] : f.geometry.coordinates.map(pol => [pol[0]])) });
     MAPA.exterior = exterior;
     MAPA.path = d3.geoPath(d3.geoMercator().fitExtent([[6, 6], [434, 594]], GEO));
-    g.append("path").attr("class", "pais").attr("stroke", "none").attr("fill", "#d5d7da").attr("opacity", 0.3)
+    g.append("path").attr("class", "pais").attr("stroke", "none").attr("fill", "#e6e7e9")
       .attr("d", MAPA.path(MAPA.pais));
     g.append("path").attr("class", "fondo").attr("stroke", "none");
     g.append("path").attr("class", "hov").attr("fill", C.tinta).attr("opacity", 0.18).attr("pointer-events", "none");
@@ -579,7 +579,7 @@ function mapa(s) {
   const k = 600 / v[2], mueve = v0.some((x, j) => Math.abs(x - v[j]) > 1e-6);
   const ps = g.selectAll("path.d").data(feats, f => f.properties.u).join("path").attr("class", "d")
     .each(function (f) { if (this.__f !== f) { this.__f = f; this.setAttribute("d", path(f)); } })  // solo los que cambian
-    .attr("stroke", f => f === sel ? C.tinta : "#fff")
+    .attr("stroke", f => f === sel ? C.tinta : dentro(f) ? "#fff" : "none")
     .attr("stroke-width", f => (f === sel ? 2.5 : dentro(f) && s.area !== "PE" ? 0.8 : 0.3) / k)
     .on("click", (e, f) => sel ? (f === sel ? null : verDistrito(null)) : dentro(f) ? bajar(f.properties.u) : subir())
     .on("mousemove", (e, f) => {
@@ -609,11 +609,11 @@ function mapa(s) {
   const lim = n === 6 ? [] : MAPA.lim.filter(f => f.properties.u.length === n && f.properties.u.startsWith(s.area === "PE" ? "" : s.area));
   g.selectAll("path.lim").data(lim, f => f.properties.u)
     .join(e => e.append("path").attr("class", "lim").attr("fill", "none").attr("pointer-events", "none")
-      .attr("stroke", C.tinta).attr("opacity", 0.7).attr("d", path))
-    .attr("stroke-width", 1.1 / k).raise();
+      .attr("stroke", "#fff").attr("d", path))
+    .attr("stroke-width", 2 / k).raise();
   // Si la cámara se mueve, los colores cambian de una vez (animar ambos a la vez traba el zoom).
-  (mueve ? ps : ps.transition().duration(DUR)).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#d5d7da")
-    .style("opacity", f => !dentro(f) ? 0.3 : sel && f !== sel ? 0.45 : 1);
+  (mueve ? ps : ps.transition().duration(DUR)).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#e6e7e9")
+    .style("opacity", 1);
   const tr = v => { const k = 600 / v[2]; return `translate(${220 - k * v[0]},${300 - k * v[1]}) scale(${k})`; };
   // Solo se anima si la cámara cambia de lugar: así una descarga tardía no reinicia el zoom.
   const dur = mueve && DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0;
