@@ -49,14 +49,6 @@
   .panel .sub { margin: 3px 0 10px; font-size: 13px; color: var(--tinta-3); }
   .apilado { display: grid; gap: 16px; align-content: start; }
   svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .elecs { display: grid; grid-template-columns: repeat(2, 1fr) 2px repeat(2, 1fr); gap: 10px; margin-top: 14px; }
-  .elecs button { font: inherit; text-align: left; padding: 8px 12px; border: 1px solid #e4e4e1; border-radius: 6px; background: var(--papel); cursor: pointer; color: var(--tinta); }
-  .elecs button.on { border-color: var(--tinta); }
-  .elecs b { display: block; font-size: 20px; }
-  .elecs .par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-  .elecs small { display: block; font-size: 12px; color: var(--tinta-3); }
-  .elecs .corte { background: var(--tinta); position: relative; }
-  .elecs .corte span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 600; }
   .ley { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--tinta-2); margin-top: 8px; }
   .ley i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
@@ -151,24 +143,32 @@
     </div>
 
     <section class="panel" style="margin-top:16px">
-      <h2 id="t-ciclo"></h2>
-      <p class="sub" id="s-ciclo"></p>
-      <svg id="ciclo" viewBox="0 0 1000 290" role="img" aria-label="Gasto mensual en obras en el año de elecciones frente al año anterior"></svg>
-      <p class="sub" style="margin:16px 0 22px">Cada elección frente a los mismos meses del año anterior. Campaña es de junio a setiembre y tras la elección, de octubre a diciembre.</p>
-      <div class="elecs" id="elecs"></div>
-      <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
-        <span><i style="background:var(--barra)"></i>Año anterior</span>
-        <span>Las elecciones municipales son a inicios de octubre y el nuevo alcalde entra el 1 de enero.</span></div>
+      <h2 id="t-elec"></h2>
+      <p class="sub" id="s-elec"></p>
+      <svg id="elec" viewBox="0 0 1000 300" role="img" aria-label="Cambio del gasto en obras en campaña y tras la elección, en cada elección"></svg>
+      <div class="ley"><span><i style="background:var(--barra)"></i>Campaña (junio a setiembre)</span>
+        <span><i style="background:var(--acento)"></i>Tras la elección (octubre a diciembre)</span>
+        <span id="u-elec"></span></div>
     </section>
 
     <section class="panel" style="margin-top:16px">
       <h2 id="t-anual"></h2>
       <p class="sub" id="s-anual"></p>
-      <svg id="anual" viewBox="0 0 1000 300" role="img" aria-label="Gasto municipal en obras por año, 2007 a 2026"></svg>
-      <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones (último año del alcalde)</span>
+      <svg id="anual" viewBox="0 0 1000 300" role="img" aria-label="Gasto en obras de junio a diciembre de cada año, 2007 a 2026"></svg>
+      <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
         <span><i style="background:var(--barra)"></i>Otros años</span>
-        <span>2007 incompleto (no todas las municipalidades reportaban). 2020, caída por la cuarentena de la pandemia. 2026 hasta septiembre.</span></div>
+        <span>2007 incompleto (no todas las municipalidades reportaban). 2026 hasta septiembre.</span></div>
     </section>
+
+    <section class="panel" style="margin-top:16px">
+      <h2 id="t-ciclo"></h2>
+      <p class="sub" id="s-ciclo"></p>
+      <svg id="ciclo" viewBox="0 0 1000 290" role="img" aria-label="Gasto mensual en obras en el año de elecciones frente al año anterior"></svg>
+      <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
+        <span><i style="background:var(--barra)"></i>Año anterior</span>
+        <span>Las elecciones municipales son a inicios de octubre y el nuevo alcalde entra el 1 de enero.</span></div>
+    </section>
+
 
     <div class="fila f-mapa">
       <section class="panel">
@@ -290,7 +290,7 @@ const nombreMed = () => medida === "o" ? "obras con pagos" : medida === "g" ? "g
 const fv = n => medida === "o" ? fmt(n) + " obras" : `S/ ${n < 10 ? n.toFixed(1) : fmt(n)} millones`;
 const verbo = (pl = true) => (medida === "o" ? (pl ? "tuvieron" : "tuvo") + " más obras con pagos"
   : (pl ? "gastaron" : "gastó") + " más" + (tipo() ? " en " + nombreMed().slice(9) : ""));
-const cambio = r => `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1)).toLocaleString("en-US")}%`;
+const cambio = r => { const v = Math.round(100 * (r - 1)); return `${v > 0 ? "+" : ""}${v === 0 ? 0 : v.toLocaleString("en-US")}%`; };
 const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
 let TURNO = 0, PROV = {}, MAPA = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
 
@@ -392,7 +392,7 @@ function actualizar() {
     $("quitar").onclick = () => verDistrito(null);
   }
   // Si el mapa hace zoom, el resto se actualiza al terminar: animar todo a la vez lo traba.
-  const turno = ++TURNO, dur = mapa(s), resto = () => turno === TURNO && (kpis(s), ciclo(s), anual(s, f), abandono(s), relac(), ranking(s));
+  const turno = ++TURNO, dur = mapa(s), resto = () => turno === TURNO && (kpis(s), ciclo(s), anual(s), abandono(s), relac(), ranking(s));
   dur ? setTimeout(resto, dur) : resto();
 }
 
@@ -420,16 +420,10 @@ function ciclo(s) {
     .map(([l, ms]) => ({ l, ms, r: suma(s.pre, ms) > 0 ? suma(s.fin, ms) / suma(s.pre, ms) : null }));
   // Las cuatro elecciones: el salto tras la elección aparece desde que se prohibió la reelección.
   const rel = (f, ms) => suma(f - 1, ms) > 0 ? suma(f, ms) / suma(f - 1, ms) : null;
-  const E = GESTIONES.map(g => ({ g, f: g + 3, c: rel(g + 3, [6, 7, 8, 9]), r: rel(g + 3, [10, 11, 12]) }));
-  const num = r => `<b style="color:${r > 1.1 ? C.acento : C.tinta}">${r == null ? "s/d" : cambio(r)}</b>`;
-  d3.select("#elecs").selectAll("*").remove();
-  E.forEach((e, i) => {
-    if (i === 2) d3.select("#elecs").append("div").attr("class", "corte").html("<span>2015: se prohíbe la reelección</span>");
-    d3.select("#elecs").append("button").attr("type", "button").classed("on", e.g === ini).on("click", () => { parar(); elegir(e.g); })
-      .html(`<small>Elecciones de ${e.f}. ${e.f <= 2014 ? "Podía reelegirse" : "Ya no puede reelegirse"}</small>` +
-        `<div class="par"><div><small>Campaña</small>${num(e.c)}</div><div><small>Tras la elección</small>${num(e.r)}</div></div>`);
-  });
-  $("t-ciclo").textContent = o ? "Cuando ya se van, pagan más obras" : "Gastan más cuando ya se van";
+  const E = GESTIONES.map(g => ({ g, f: g + 3, c: rel(g + 3, [6, 7, 8, 9]), r: rel(g + 3, [10, 11, 12]),
+    ca: suma(g + 2, [6, 7, 8, 9]), cb: suma(g + 3, [6, 7, 8, 9]), ra: suma(g + 2, [10, 11, 12]), rb: suma(g + 3, [10, 11, 12]) }));
+  elec(s, E);
+  $("t-ciclo").textContent = `Mes a mes: ${s.fin} frente a ${s.pre}`;
   $("s-ciclo").textContent = `${o ? "Obras con pagos" : "Millones de soles de 2022"} por mes, ${s.zona}` +
     (tipo() ? ", gasto total en obras (no hay datos mensuales por tipo)" : "");
   const W = 1000, H = 290, m = { t: 52, r: 58, b: 30, l: 56 }, M12 = d3.range(1, 13);
@@ -463,65 +457,103 @@ function ciclo(s) {
     .on("mouseleave", ocultarTip);
 }
 
-function anual(s, f) {
-  const fuente = s.sel ? [s.sel] : s.cols;
-  const Nom = nombreMed()[0].toUpperCase() + nombreMed().slice(1), uni = medida === "o" ? "Número de obras" : "Millones de soles de 2022";
-  $("t-anual").textContent = s.sel ? `${Nom} de ${s.sel.n}, año por año`
-    : medida === "g" ? "El gasto en obras cae cada vez que entra un nuevo alcalde" : `${Nom}, año por año`;
-  $("s-anual").textContent = s.sel ? `${uni}. Haz clic otra vez en el distrito para volver al total.`
-    : `${uni} por año.` + (medida === "o" ? " Cuenta cada obra que recibió algún pago en el año." : "")
-      + (tipo() ? " Gasto de inversión en esa función; no hay datos antes de 2009." : "") + " Haz clic en una barra para elegir esa gestión.";
-  const v = ANIOS.map(y => ({ y, g: d3.sum(fuente, c => gas(c, y)) }));
-  const W = 1000, H = 300, m = { t: 40, r: 10, b: 50, l: 56 };
+// Las cuatro elecciones lado a lado: en campaña siempre se gasta más, pero el salto tras la
+// elección aparece recién cuando el alcalde ya no puede reelegirse.
+function elec(s, E) {
+  const o = medida === "o";
+  $("t-elec").textContent = o ? "Desde que no pueden reelegirse, pagan más obras cuando ya se van"
+    : "Desde que no pueden reelegirse, gastan más cuando ya se van";
+  $("s-elec").textContent = `${o ? "Obras con pagos" : "Gasto en obras"} frente a los mismos meses del año anterior, ${s.zona}` +
+    (tipo() ? " (gasto total, no hay datos mensuales por tipo)" : "") + ". Haz clic en una elección para verla mes a mes.";
+  $("u-elec").textContent = `Bajo cada cifra, ${o ? "obras con pagos" : "millones de soles de 2022"}: año anterior → año de elecciones.`;
+  const W = 1000, H = 300, m = { t: 30, r: 10, b: 62, l: 10 }, pct = r => r == null ? 0 : 100 * (r - 1);
+  const B = E.flatMap(e => [{ e, k: "c", v: e.c, a: e.ca, b: e.cb }, { e, k: "r", v: e.r, a: e.ra, b: e.rb }]);
+  const x0 = d3.scaleBand().domain(E.map(e => e.f)).range([m.l, W - m.r]).paddingInner(0.35).paddingOuter(0.15);
+  const x1 = d3.scaleBand().domain(["c", "r"]).range([0, x0.bandwidth()]).padding(0.1);
+  const ext = d3.extent(B, d => pct(d.v));
+  const y = d3.scaleLinear().domain([Math.min(0, ext[0]) * 1.2 - 16, Math.max(10, ext[1]) * 1.3]).range([H - m.b, m.t]);
+  const svg = d3.select("#elec");
+  if (svg.select(".barras").empty()) ["cero", "barras", "etq", "corte", "hit"].forEach(c => svg.append("g").attr("class", c));
+  svg.select(".cero").selectAll("line").data([0]).join("line").attr("x1", m.l).attr("x2", W - m.r).attr("stroke", "#c9ccd0")
+    .transition().duration(DUR).attr("y1", y(0)).attr("y2", y(0));
+  const X = d => x0(d.e.f) + x1(d.k);
+  svg.select(".barras").selectAll("rect").data(B, d => d.e.f + d.k).join(e => e.append("rect").attr("rx", 3).attr("y", y(0)).attr("height", 0))
+    .attr("x", X).attr("width", x1.bandwidth()).attr("fill", d => d.k === "r" ? C.acento : C.barra)
+    .transition().duration(DUR).attr("y", d => y(Math.max(0, pct(d.v)))).attr("height", d => Math.abs(y(pct(d.v)) - y(0)));
+  svg.select(".etq").selectAll("text.v").data(B, d => d.e.f + d.k).join("text").attr("class", "v")
+    .attr("x", d => X(d) + x1.bandwidth() / 2).attr("text-anchor", "middle").attr("font-size", 17).attr("font-weight", 700)
+    .attr("fill", d => d.k === "r" && d.v > 1 ? C.acento : C.tinta).text(d => d.v == null ? "s/d" : cambio(d.v))
+    .transition().duration(DUR).attr("y", d => pct(d.v) >= 0 ? y(pct(d.v)) - 24 : y(pct(d.v)) + 20);
+  svg.select(".etq").selectAll("text.m").data(B, d => d.e.f + d.k).join("text").attr("class", "m")
+    .attr("x", d => X(d) + x1.bandwidth() / 2).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", C.tinta3)
+    .text(d => `${fmt(d.a)} → ${fmt(d.b)}`)
+    .transition().duration(DUR).attr("y", d => pct(d.v) >= 0 ? y(pct(d.v)) - 8 : y(pct(d.v)) + 35);
+  svg.select(".etq").selectAll("text.e").data(E, e => e.f).join("text").attr("class", "e")
+    .attr("x", e => x0(e.f) + x0.bandwidth() / 2).attr("y", H - m.b + 26).attr("text-anchor", "middle").attr("font-size", 14)
+    .attr("font-weight", e => e.g === ini ? 700 : 500).attr("fill", e => e.g === ini ? C.tinta : C.tinta3).text(e => `Elecciones ${e.f}`);
+  svg.select(".etq").selectAll("text.p").data(E, e => e.f).join("text").attr("class", "p")
+    .attr("x", e => x0(e.f) + x0.bandwidth() / 2).attr("y", H - m.b + 45).attr("text-anchor", "middle").attr("font-size", 12)
+    .attr("fill", C.tinta3).text(e => e.f <= 2014 ? "El alcalde podía reelegirse" : "Ya no podía reelegirse");
+  const xc = (x0(2014) + x0.bandwidth() + x0(2018)) / 2;
+  const c = svg.select(".corte").selectAll("g").data([0]).join(e => { const g = e.append("g");
+    g.append("line").attr("stroke", C.tinta).attr("stroke-dasharray", "4 4"); g.append("text"); return g; });
+  c.select("line").attr("x1", xc).attr("x2", xc).attr("y1", m.t - 10).attr("y2", H - 8);
+  c.select("text").attr("x", xc).attr("y", m.t - 16).attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", 600)
+    .attr("fill", C.tinta).text("2015: se prohíbe la reelección");
+  svg.select(".hit").selectAll("rect").data(E, e => e.f).join("rect").attr("x", e => x0(e.f) - 10).attr("width", x0.bandwidth() + 20)
+    .attr("y", 0).attr("height", H).attr("fill", "transparent").style("cursor", "pointer")
+    .on("click", (ev, e) => { parar(); elegir(e.g); })
+    .on("mousemove", (ev, e) => verTip(ev, `<div class="tz">Elecciones ${e.f}</div>` +
+      `Campaña: <b>${e.c == null ? "s/d" : cambio(e.c)}</b> (${fv(e.ca)} en ${e.f - 1}, ${fv(e.cb)} en ${e.f})<br>` +
+      `Tras la elección: <b>${e.r == null ? "s/d" : cambio(e.r)}</b> (${fv(e.ra)} en ${e.f - 1}, ${fv(e.rb)} en ${e.f})` +
+      `<div class="th">Clic para verla mes a mes</div>`))
+    .on("mouseleave", ocultarTip);
+}
+
+// Junio a diciembre de cada año: de aquí salen los porcentajes de las elecciones.
+function anual(s) {
+  const fuente = s.sel ? [s.sel] : s.cols, o = medida === "o";
+  const Nom = nombreMed()[0].toUpperCase() + nombreMed().slice(1);
+  $("t-anual").textContent = `${Nom}${s.sel ? " de " + s.sel.n : ""} de junio a diciembre, año por año`;
+  $("s-anual").textContent = `${o ? "Obras con pagos" : "Millones de soles de 2022"}, ${s.sel ? s.sel.n : s.zona}.` +
+    " Sobre cada año de elecciones, el cambio frente al año anterior. Haz clic en una barra para elegir esa gestión.";
+  const v = ANIOS.map(y => ({ y, g: d3.sum(fuente, c => gas2(c, y)) }));
+  const W = 1000, H = 300, m = { t: 34, r: 10, b: 50, l: 56 };
   const x = d3.scaleBand().domain(ANIOS).range([m.l, W - m.r]).paddingInner(0.25).paddingOuter(0.1);
   const y = d3.scaleLinear().domain([0, (d3.max(v, d => d.g) || 1) * 1.15]).nice().range([H - m.b, m.t]);
-  const svg = d3.select("#anual"), ancho4 = x.step() * 3 + x.bandwidth(), sel = d => d.y >= ini && d.y <= ini + 3;
+  const svg = d3.select("#anual"), ancho4 = x.step() * 3 + x.bandwidth();
   if (svg.select(".barras").empty()) {
-    ["fondo", "eje", "barras", "etq", "anot"].forEach(k => svg.append("g").attr("class", k));
+    ["eje", "barras", "etq", "anot"].forEach(k => svg.append("g").attr("class", k));
     svg.select(".etq").selectAll("text").data(ANIOS).join("text").attr("x", d => x(d) + x.bandwidth() / 2).attr("y", H - m.b + 16)
       .attr("text-anchor", "middle").attr("font-size", 12).attr("fill", d => esElec(d) ? C.acento : C.tinta3)
       .attr("font-weight", d => esElec(d) ? 600 : 400).text(d => d);
-    svg.select(".fondo").append("rect").attr("y", m.t - 34).attr("height", H - m.b - m.t + 34).attr("width", ancho4 + 16)
-      .attr("fill", "#f3f3f0").attr("rx", 4).attr("x", x(ini) - 8);
   }
-  svg.select(".fondo rect").transition().duration(DUR).attr("x", x(ini) - 8);
   svg.select(".eje").attr("transform", `translate(${m.l},0)`)
     .call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(d => fmt(d)))
     .call(g => g.select(".domain").remove()).call(g => g.selectAll("line").attr("stroke", "#ececea"))
     .call(g => g.selectAll("text").attr("fill", C.tinta3).attr("font-size", 12));
+  const prev = d => v.find(w => w.y === d.y - 1);
   svg.select(".barras").selectAll("rect").data(v, d => d.y)
     .join(e => e.append("rect").attr("x", d => x(d.y)).attr("width", x.bandwidth()).attr("rx", 2).attr("y", y(0)).attr("height", 0)
       .attr("fill", d => esElec(d.y) ? C.acento : C.barra))
     .style("cursor", d => d.y < 2023 ? "pointer" : null)
     .on("click", (e, d) => { if (d.y < 2023) { parar(); elegir(Y0 + 4 * Math.floor((d.y - Y0) / 4)); } })
-    .on("mousemove", (e, d) => verTip(e, `<b>${d.y}</b><br>${fv(d.g)}` +
-      (d.y === Y0 ? "<br>Año incompleto" : d.y === 2026 ? "<br>Hasta septiembre" : d.y === 2020 ? "<br>Cuarentena por la pandemia" : "")))
+    .on("mousemove", (e, d) => verTip(e, `<div class="tz">Junio a diciembre de ${d.y}</div>${fv(d.g)}` +
+      (prev(d)?.g > 0 ? `<br><b>${cambio(d.g / prev(d).g)}</b> frente a ${d.y - 1}` : "") +
+      (d.y === Y0 ? "<br>Año incompleto" : d.y === 2026 ? "<br>Hasta septiembre" : "")))
     .on("mouseleave", ocultarTip)
     .transition().duration(DUR)
     .attr("y", d => y(d.g)).attr("height", d => y(0) - y(d.g))
-    .attr("opacity", d => (d.y === Y0 || d.y === 2026 ? 0.45 : 1) * (sel(d) ? 1 : 0.6));
-  // Nombres de gestion y anotacion del cambio (aparecen al terminar la transicion).
+    .attr("opacity", d => d.y === Y0 || d.y === 2026 ? 0.45 : 1);
   const an = svg.select(".anot"); an.selectAll("*").remove();
   [2007, 2011, 2015, 2019, 2023].forEach(g => an.append("text").attr("x", x(g) + ancho4 / 2)
     .attr("y", H - m.b + 36).attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", g === ini ? 700 : 400)
     .attr("fill", g === ini ? C.tinta : C.tinta3).text(`Gestión ${g}-${g + 3}${g === 2023 ? " (en curso)" : ""}`));
-  // 2020: la cuarentena frenó las obras; se marca para no leerla como parte del ciclo.
-  const p20 = v.find(d => d.y === 2020);
-  an.append("text").attr("x", x(2020) + x.bandwidth() / 2).attr("y", y(p20.g) - 6).attr("text-anchor", "middle")
-    .attr("font-size", 11.5).attr("fill", C.tinta3).text("Pandemia");
-  // Lo que muestra este gráfico: la caída del primer año del alcalde frente al último del anterior.
-  const a = v.find(d => d.y === ini - 1), b = v.find(d => d.y === ini), r = a && a.g > 0 ? b.g / a.g : null;
+  // El cambio de cada año de elecciones frente al anterior (el mismo número del gráfico de arriba).
   const nota = an.append("g").attr("opacity", 0);
-  const fm = n => n < 10 ? n.toFixed(1) : fmt(n);
-  if (r != null) [a, b].forEach(d => nota.append("text").attr("x", x(d.y) + x.bandwidth() / 2).attr("y", y(d.g) - 6).attr("text-anchor", "middle")
-    .attr("font-size", 12.5).attr("font-weight", 600).attr("fill", C.tinta).text(fm(d.g)));
-  if (r != null) {
-    const xa = x(a.y) + x.bandwidth() / 2, xb = x(b.y) + x.bandwidth() / 2, yl = Math.min(y(a.g), y(b.g)) - 24;
-    nota.append("path").attr("d", `M${xa},${y(a.g) - 20} V${yl} H${xb} V${y(b.g) - 20}`)
-      .attr("fill", "none").attr("stroke", C.tinta).attr("stroke-width", 1);
-    nota.append("text").attr("x", (xa + xb) / 2).attr("y", yl - 6).attr("text-anchor", "middle").attr("font-size", 14)
-      .attr("font-weight", 700).attr("fill", C.acento).text(cambio(r) + " al entrar el nuevo alcalde");
-  }
+  v.filter(d => esElec(d.y) && d.y < 2026 && prev(d)?.g > 0).forEach(d => nota.append("text")
+    .attr("x", x(d.y) + x.bandwidth() / 2).attr("y", y(d.g) - 7).attr("text-anchor", "middle").attr("font-size", 13)
+    .attr("font-weight", 700).attr("fill", d.g > prev(d).g ? C.acento : C.tinta).text(cambio(d.g / prev(d).g)));
   nota.transition().delay(DUR).duration(DUR / 2).attr("opacity", 1);
 }
 
@@ -602,7 +634,7 @@ function mapa(s) {
           `<div class="ts">${nombreMed()[0].toUpperCase() + nombreMed().slice(1)} de junio a diciembre, ${s.fin} frente a ${s.pre}</div>` +
           `<div class="tm"><div>${s.pre}<b>${fv(d.a)}</b></div><div>${s.fin}<b>${fv(d.b)}</b></div></div>`
         : `<div class="ts">Sin datos</div>`) +
-        `<div class="th">${sel && f !== sel ? "Clic para volver" : n === 6 ? "Clic para ver su gasto año por año" : "Clic para acercarte"}</div>`); })
+        `<div class="th">${sel && f !== sel ? "Clic para volver" : n === 6 ? "Clic para elegirlo" : "Clic para acercarte"}</div>`); })
     .on("mouseleave", ocultarTip);
   const clave = s.area + "|" + (sel ? distrito : "") + "|" + feats.filter(dentro).length;
   if (MAPA.clave !== clave) {  // reordenar y recalcular el fondo solo si cambió la zona
