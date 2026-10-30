@@ -53,6 +53,7 @@
   .elecs button { font: inherit; text-align: left; padding: 8px 12px; border: 1px solid #e4e4e1; border-radius: 6px; background: var(--papel); cursor: pointer; color: var(--tinta); }
   .elecs button.on { border-color: var(--tinta); }
   .elecs b { display: block; font-size: 20px; }
+  .elecs .par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
   .elecs small { display: block; font-size: 12px; color: var(--tinta-3); }
   .elecs .corte { background: var(--tinta); position: relative; }
   .elecs .corte span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 600; }
@@ -145,7 +146,7 @@
       <h2 id="t-ciclo"></h2>
       <p class="sub" id="s-ciclo"></p>
       <svg id="ciclo" viewBox="0 0 1000 290" role="img" aria-label="Gasto mensual en obras en el año de elecciones frente al año anterior"></svg>
-      <p class="sub" style="margin:16px 0 22px">Tras la elección (octubre a diciembre) frente a los mismos meses del año anterior, en cada elección. Haz clic para verla.</p>
+      <p class="sub" style="margin:16px 0 22px">Campaña (junio a setiembre) y tras la elección (octubre a diciembre) frente a los mismos meses del año anterior, en cada elección. Haz clic para verla.</p>
       <div class="elecs" id="elecs"></div>
       <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
         <span><i style="background:var(--barra)"></i>Año anterior</span>
@@ -206,7 +207,7 @@
 
     <div class="texto" id="metodo">
       <div><h2>Hallazgos</h2><ol>
-        <li><b>Gastan más cuando ya se van.</b> Desde 2015, cuando se prohibió la reelección inmediata, el gasto en obras sube 18% en los meses de campaña (junio a setiembre) y 37% entre la elección y la salida del alcalde (octubre a diciembre), frente a los mismos meses de otros años. Antes de 2015 casi no había ese salto final.</li>
+        <li><b>Gastan más cuando ya se van.</b> Desde 2015, cuando se prohibió la reelección inmediata, el gasto en obras sube 18% en los meses de campaña (junio a setiembre) y 37% entre la elección y la salida del alcalde (octubre a diciembre), frente a los mismos meses de otros años. Antes de 2015 el gasto también subía en campaña, sobre todo en obras nuevas, pero casi no había ese salto final.</li>
         <li><b>En 2022 pasó en 6 de cada 10 distritos.</b> De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (en soles de 2022).</li>
         <li><b>Al cambiar de alcalde, entre 28% y 32% de las obras a medias se queda sin pagos</b>, frente a 18% a 22% en años sin cambio.</li>
         <li><b>Crecen más las obras que se ven.</b> De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) fue 2.5 veces el de los mismos meses de 2021, y en 2018, 1.9 veces. El de agua y desagüe subió 7% en 2022 y bajó 17% en 2018.</li>
@@ -401,13 +402,15 @@ function ciclo(s) {
     .map(([l, ms]) => ({ l, ms, r: suma(s.pre, ms) > 0 ? suma(s.fin, ms) / suma(s.pre, ms) : null }));
   const R = D.regresion["indice_gasto|sin_reeleccion|eleccion"], pc = v => Math.round(Math.abs(v.pct)) + "%";
   // Las cuatro elecciones: el salto tras la elección aparece desde que se prohibió la reelección.
-  const E = GESTIONES.map(g => { const f = g + 3, a = suma(f - 1, [10, 11, 12]); return { g, f, r: a > 0 ? suma(f, [10, 11, 12]) / a : null }; });
+  const rel = (f, ms) => suma(f - 1, ms) > 0 ? suma(f, ms) / suma(f - 1, ms) : null;
+  const E = GESTIONES.map(g => ({ g, f: g + 3, c: rel(g + 3, [6, 7, 8, 9]), r: rel(g + 3, [10, 11, 12]) }));
+  const num = r => `<b style="color:${r > 1.1 ? C.acento : C.tinta}">${r == null ? "s/d" : cambio(r)}</b>`;
   d3.select("#elecs").selectAll("*").remove();
   E.forEach((e, i) => {
     if (i === 2) d3.select("#elecs").append("div").attr("class", "corte").html("<span>2015: se prohíbe la reelección</span>");
     d3.select("#elecs").append("button").attr("type", "button").classed("on", e.g === ini).on("click", () => { parar(); elegir(e.g); })
-      .html(`<small>Elecciones de ${e.f}</small><b style="color:${e.r > 1.1 ? C.acento : C.tinta}">${e.r == null ? "s/d" : cambio(e.r)}</b>` +
-        `<small>${e.f <= 2014 ? "El alcalde podía reelegirse" : "El alcalde ya no puede reelegirse"}</small>`);
+      .html(`<small>Elecciones de ${e.f}. ${e.f <= 2014 ? "Podía reelegirse" : "Ya no puede reelegirse"}</small>` +
+        `<div class="par"><div><small>Campaña</small>${num(e.c)}</div><div><small>Tras la elección</small>${num(e.r)}</div></div>`);
   });
   $("t-ciclo").textContent = o ? "Cuando ya se van, pagan más obras" : "Gastan más cuando ya se van";
   $("s-ciclo").textContent = `${o ? "Obras con pagos" : "Millones de soles de 2022"} por mes, ${s.zona}` +
