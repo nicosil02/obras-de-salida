@@ -27,11 +27,20 @@ El dashboard permite buscar un distrito y elegir departamento, provincia, tamañ
 | IPC de Lima Metropolitana | BCRP, [serie PN38705PM](https://estadisticas.bcrp.gob.pe/estadisticas/series/mensuales/resultados/PN38705PM/html), en `datos/originales/ipc_lima.csv` | Pasar el gasto a soles de 2022 |
 | Límites distritales | INEI, versión de GeoGPS Perú en [nicosil02/Dashboard](https://github.com/nicosil02/Dashboard/tree/main/Distrital) | Mapa |
 
+**Estudios citados**
+
+- Armas, J. y Puppo, P. (2021). [Ciclos políticos y la prohibición de la reelección de autoridades subnacionales en el Perú](https://repositorio.up.edu.pe/backend/api/core/bitstreams/1156970d-29bf-487d-b3f5-c4a8d86a71f3/content). En *Economía aplicada. Ensayos de investigación económica 2020*. Universidad del Pacífico.
+- Calle, F. (2025). [Term Limits and the Spatial Allocation of Capital by the Public Sector](https://knowledge.uchicago.edu/record/14893). Tesis doctoral, Universidad de Chicago.
+- Guzmán, J. (2015). [El impacto de las inversiones municipales en la probabilidad de reelección de los alcaldes a nivel distrital en el Perú](https://repositorio.up.edu.pe/handle/11354/1017). Tesis de maestría, Universidad del Pacífico.
+- Jiménez, A., Merino, C. y Sosa, J. C. (2020). [Local Public Investment Drivers in Peru](https://doi.org/10.18800/economia.202002.003). *Economía*, 43(86), 57-78.
+- Pebe, C., Radas, N. y Torres, J. (2017). [Canon minero y ciclo político presupuestal en las municipalidades distritales del Perú, 2002-2011](https://www.cepal.org/es/publicaciones/42699-canon-minero-ciclo-politico-presupuestal-municipalidades-distritales-peru-2002). *Revista CEPAL*, 123.
+
 ## Metodología
 
 - **Gasto en obras.** Devengado mensual de los proyectos de inversión de cada municipalidad. Las municipalidades provinciales se asignan al distrito capital.
 - **Soles de 2022.** Todo el gasto se corrige por inflación con el IPC de Lima del BCRP.
-- **Campaña y salida.** Se compara junio a diciembre del año de elecciones (2010, 2014, 2018, 2022) con los mismos meses del año anterior. No se compara con el primer año del alcalde, porque ese año se gasta poco por el arranque de la gestión y eso inflaría la diferencia.
+- **Campaña y salida.** Se compara junio a diciembre del año de elecciones (2010, 2014, 2018, 2022) con los mismos meses del año anterior. No se compara con el primer año del alcalde, porque ese año la inversión cae cerca de 25% por el arranque de la gestión (Jiménez, Merino y Sosa, 2020) y eso inflaría la diferencia.
+- **Reelegidos.** Para 2010 y 2014 se cruzan los nombres de los alcaldes electos del JNE (sin DNI) para saber si la misma persona volvió a ganar. De octubre a diciembre de 2010 el gasto subió 9% donde el alcalde se iba y cayó 25% donde se quedaba; en 2014, -5% frente a -15%.
 - **Número de obras.** Obras distintas que recibieron al menos un pago en el año.
 - **Tipo de obra.** Gasto de inversión (adquisición de activos no financieros) según la función del clasificador presupuestal, desde 2009.
 - **Obra a medias abandonada.** Obra con pagos en los 6 meses previos al 1 de enero, con menos de 80% de su costo pagado, que no recibe ningún pago en los 24 meses siguientes. Se compara enero de los años de cambio de alcalde (2011, 2015, 2019, 2023) con enero de años sin cambio (2009, 2013, 2017, 2021).
@@ -40,7 +49,7 @@ El dashboard permite buscar un distrito y elegir departamento, provincia, tamañ
 
 ## Hallazgos
 
-1. **Gastan más cuando ya se van.** Desde 2015 el gasto en obras sube 18% en la campaña y 37% entre la elección y la salida del alcalde, frente a los mismos meses de otros años. Antes de 2015, cuando el alcalde podía reelegirse, casi no había ese salto final. Comparando octubre a diciembre con los mismos meses del año anterior, el gasto cambió +2% en 2010 y -9% en 2014, cuando el alcalde podía reelegirse, y +25% en 2018 y +38% en 2022, cuando ya no. En campaña el gasto sube en casi todas las elecciones (+13%, 0%, +14% y +22%), y cuando el alcalde podía reelegirse lo que más subía eran las obras nuevas (36% más obras con su primer pago en los meses de campaña). De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (soles de 2022), y 63% de los distritos gastó más.
+1. **Gastan más cuando ya se van.** Desde 2015 el gasto en obras sube 18% en la campaña y 37% entre la elección y la salida del alcalde, frente a los mismos meses de otros años. Antes de 2015, cuando el alcalde podía reelegirse, casi no había ese salto final. Los estudios con datos anuales tampoco encontraban un ciclo claro antes de 2015 (Pebe, Radas y Torres, 2017; Armas y Puppo, 2021); con datos mensuales el salto de fin de gestión sí se ve. Comparando octubre a diciembre con los mismos meses del año anterior, el gasto cambió +2% en 2010 y -9% en 2014, cuando el alcalde podía reelegirse, y +25% en 2018 y +38% en 2022, cuando ya no. En campaña el gasto sube en casi todas las elecciones (+13%, 0%, +14% y +22%), y cuando el alcalde podía reelegirse lo que más subía eran las obras nuevas (36% más obras con su primer pago en los meses de campaña). De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (soles de 2022), y 63% de los distritos gastó más.
 2. **Cuando cambia el alcalde, más obras se quedan a medias.** En enero de 2023, 28% de las obras a medias (3,511) no volvió a recibir pagos en dos años. En enero de 2021, sin cambio de alcalde, fue 18%. La diferencia se repite en 2011, 2015 y 2019.
 3. **Importa quién entra.** Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).
 
