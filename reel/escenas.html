@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ideas para el reel</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<style>
+  body { margin: 0; background: #d9d8d3; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .fila { display: flex; gap: 36px; justify-content: center; padding: 30px; }
+  .cel { width: 360px; height: 640px; border-radius: 28px; overflow: hidden; position: relative;
+         box-shadow: 0 20px 40px rgba(0,0,0,.25); }
+  .rotulo { text-align: center; font-weight: 700; margin-bottom: 10px; color: #333; }
+  .pad { padding: 34px 26px; }
+  .k { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+  .t { font-size: 27px; font-weight: 800; line-height: 1.12; letter-spacing: -0.02em; margin: 8px 0 0; }
+  .aviso { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 10px; opacity: .55; }
+  .fade { opacity: 0; transform: translateY(10px); transition: opacity .7s, transform .7s; }
+  .on .fade { opacity: 1; transform: none; }
+  /* 1 */
+  #c1 { background: #fbf7ef; color: #1d1d1b; }
+  /* 2 */
+  #c2 { background: #0d0f14; color: #f2f1ec; }
+  /* 3 */
+  #c3 { background: #f2f1ec; color: #141414; }
+  .ficha { background: #fff; border-radius: 14px; padding: 16px; margin-top: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+  .barra { height: 22px; border-radius: 99px; background: #e4e3df; overflow: hidden; margin: 12px 0 6px; position: relative; }
+  .barra i { display: block; height: 100%; width: 0; background: #2a78d6; transition: width 2.2s cubic-bezier(.3,.7,.3,1); }
+  .congela i { background: #9aa3ad !important; }
+  .linea-t { display: grid; grid-template-columns: 14px 1fr; gap: 6px 10px; margin-top: 16px; font-size: 14px; }
+  .linea-t b { font-weight: 700; }
+  .pt { width: 12px; height: 12px; border-radius: 50%; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="fila">
+  <div><div class="rotulo">1 · La alcancía</div><div class="cel" id="c1"><div class="pad">
+    <div class="k">Gestión 2019–2022</div>
+    <div class="t">De cada S/ 100 para obras, el alcalde gasta <span style="color:#d4541c">S/ 34</span> en su último año</div>
+    <svg id="mon" width="308" height="330"></svg>
+    <div class="fade" style="font-size:15px;line-height:1.35">Si repartiera parejo serían S/ 25 por año.<br><b>El año de la elección es el que más gasta.</b></div>
+  </div><div class="aviso">Voz generada con IA · Datos: MEF</div></div></div>
+
+  <div><div class="rotulo">2 · El latido</div><div class="cel" id="c2"><div class="pad">
+    <div class="k">Gasto en obras · S/ de cada 100 de la gestión</div>
+    <div class="t">Sube hasta la elección.<br>Cae cuando entra el nuevo alcalde.</div>
+    <svg id="lat" width="308" height="380"></svg>
+    <div class="fade" style="font-size:15px;line-height:1.35;color:#c9c8c3">Tres gestiones, el mismo latido.</div>
+  </div><div class="aviso">Voz generada con IA · Datos: MEF</div></div></div>
+
+  <div><div class="rotulo">3 · Una obra real</div><div class="cel" id="c3"><div class="pad">
+    <div class="k">Lurigancho, Lima</div>
+    <div class="t">Una obra de desagüe que empezó en año electoral</div>
+    <div class="ficha">
+      <div style="font-size:13px;color:#52514e">Red de alcantarillado, margen izquierda del río Rímac</div>
+      <div style="font-size:13px;color:#52514e;margin-top:2px">Costo: <b style="color:#141414">S/ 8.6 millones</b></div>
+      <div class="barra" id="b3"><i></i></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><b id="pct3">0%</b><span style="color:#7a7974">pagado</span></div>
+      <div class="linea-t">
+        <div class="pt" style="background:#2a78d6"></div><div><b>Mar 2022</b> · primer pago</div>
+        <div class="pt fade" style="background:#d4541c"></div><div class="fade"><b>Oct 2022</b> · elecciones</div>
+        <div class="pt fade" style="background:#52514e"></div><div class="fade"><b>Dic 2022</b> · último pago</div>
+        <div class="pt fade" style="background:#c9c8c3"></div><div class="fade"><b>2023 → hoy</b> · ningún pago</div>
+      </div>
+    </div>
+    <div class="fade" style="margin-top:18px;font-size:16px;line-height:1.35">En 2023, <b style="color:#d4541c">3,511 obras</b> a medias dejaron de recibir pagos. <b>3 de cada 10.</b></div>
+  </div><div class="aviso">Voz generada con IA · Datos: MEF</div></div></div>
+</div>
+<script>
+// 1 · monedas apiladas por año
+(() => {
+  const svg = d3.select("#mon"), datos = [["2019", 21], ["2020", 19], ["2021", 26], ["2022", 34]];
+  const x = d3.scalePoint().domain(datos.map(d => d[0])).range([42, 266]).padding(0);
+  const base = 290, paso = 6.6;
+  const g = svg.selectAll("g").data(datos).join("g").attr("transform", d => `translate(${x(d[0])},0)`);
+  g.each(function ([a, n], k) {
+    const col = a === "2022" ? ["#e8743f", "#b8441a"] : ["#f0c44c", "#c99a1e"];
+    d3.select(this).selectAll("ellipse").data(d3.range(n)).join("ellipse")
+      .attr("cx", 0).attr("rx", 26).attr("ry", 7).attr("fill", col[0]).attr("stroke", col[1]).attr("stroke-width", 1.2)
+      .attr("cy", -40).attr("opacity", 0)
+      .transition().delay(i => 400 + k * 900 + i * 22).duration(320).ease(d3.easeBounceOut)
+      .attr("cy", i => base - i * paso).attr("opacity", 1);
+    d3.select(this).append("text").attr("y", base + 26).attr("text-anchor", "middle").attr("font-size", 13)
+      .attr("font-weight", a === "2022" ? 800 : 500).attr("fill", "#1d1d1b").text(a === "2022" ? "2022 · elección" : a);
+    d3.select(this).append("text").attr("y", base - n * paso - 14).attr("text-anchor", "middle")
+      .attr("font-size", a === "2022" ? 26 : 18).attr("font-weight", 800).attr("fill", a === "2022" ? "#d4541c" : "#1d1d1b")
+      .attr("opacity", 0).text("S/ " + n).transition().delay(400 + k * 900 + n * 22).duration(400).attr("opacity", 1);
+  });
+  svg.append("line").attr("x1", 10).attr("x2", 298).attr("y1", base - 25 * paso).attr("y2", base - 25 * paso)
+    .attr("stroke", "#1d1d1b").attr("stroke-dasharray", "4 4").attr("opacity", .45);
+  svg.append("text").attr("x", 298).attr("y", base - 25 * paso - 5).attr("text-anchor", "end").attr("font-size", 11)
+    .attr("fill", "#52514e").text("parejo = S/ 25");
+  setTimeout(() => d3.select("#c1").classed("on", true), 4300);
+})();
+
+// 2 · diente de sierra
+(() => {
+  const v = [[2011, 17.3], [2012, 25.0], [2013, 29.1], [2014, 28.7], [2015, 21.4], [2016, 23.6], [2017, 24.7], [2018, 30.3],
+             [2019, 21.1], [2020, 18.7], [2021, 26.3], [2022, 33.9]];
+  const svg = d3.select("#lat"), w = 308, h = 380;
+  const x = d3.scaleLinear().domain([2011, 2022]).range([18, w - 22]), y = d3.scaleLinear().domain([12, 38]).range([h - 40, 30]);
+  svg.append("line").attr("x1", 0).attr("x2", w).attr("y1", y(25)).attr("y2", y(25)).attr("stroke", "#f2f1ec")
+    .attr("stroke-opacity", .25).attr("stroke-dasharray", "3 4");
+  svg.append("text").attr("x", 0).attr("y", y(25) + 16).attr("fill", "#8d8c86").attr("font-size", 11).text("parejo = S/ 25");
+  [2014, 2018, 2022].forEach(a => svg.append("text").attr("x", x(a)).attr("y", h - 16).attr("text-anchor", "middle")
+    .attr("fill", "#ff7a3d").attr("font-size", 12).attr("font-weight", 700).text(a));
+  [2011, 2015, 2019].forEach(a => svg.append("text").attr("x", x(a)).attr("y", h - 16).attr("text-anchor", "middle")
+    .attr("fill", "#6aa6ec").attr("font-size", 12).text(a));
+  // Linea continua: sube en la gestion y cae en el cambio de alcalde.
+  const linea = d3.line(d => x(d[0]), d => y(d[1])).curve(d3.curveMonotoneX);
+  const p = svg.append("path").datum(v).attr("d", linea).attr("fill", "none").attr("stroke", "#ff7a3d")
+    .attr("stroke-width", 4).attr("stroke-linecap", "round").style("filter", "drop-shadow(0 0 6px rgba(255,122,61,.7))");
+  const L = p.node().getTotalLength();
+  p.attr("stroke-dasharray", L).attr("stroke-dashoffset", L).transition().delay(500).duration(4200).ease(d3.easeLinear)
+    .attr("stroke-dashoffset", 0);
+  v.forEach(([a, s], i) => {
+    const elec = [2014, 2018, 2022].includes(a);
+    svg.append("circle").attr("cx", x(a)).attr("cy", y(s)).attr("r", elec ? 6 : 3.5).attr("fill", elec ? "#ff7a3d" : "#6aa6ec")
+      .attr("opacity", 0).transition().delay(500 + 4200 * i / 11).attr("opacity", 1);
+  });
+  svg.append("text").attr("x", x(2022)).attr("y", y(33.9) - 16).attr("text-anchor", "end").attr("fill", "#fff")
+    .attr("font-size", 30).attr("font-weight", 800).attr("opacity", 0).text("S/ 34").transition().delay(4700).attr("opacity", 1);
+  svg.append("text").attr("x", x(2019) + 4).attr("y", y(21.1) + 30).attr("fill", "#6aa6ec").attr("font-size", 12)
+    .attr("opacity", 0).text("nuevo alcalde ↓").transition().delay(3600).attr("opacity", 1);
+  setTimeout(() => d3.select("#c2").classed("on", true), 4900);
+})();
+
+// 3 · obra que se congela
+(() => {
+  const b = document.querySelector("#b3 i"), pct = document.getElementById("pct3");
+  setTimeout(() => { b.style.width = "44%"; d3.select(pct).transition().duration(2200)
+    .tween("t", () => t => pct.textContent = Math.round(44 * t) + "%"); }, 500);
+  setTimeout(() => { document.getElementById("b3").classList.add("congela"); pct.textContent = "44% · congelada"; }, 3000);
+  setTimeout(() => d3.select("#c3").classed("on", true), 3200);
+})();
+</script>
+</body>
+</html>

@@ -119,6 +119,33 @@ def distritos():
     (DOCS / "distritos.geojson").write_text(json.dumps(geo, separators=(",", ":")), encoding="utf-8")
 
 
+MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"]
+VISIBLES = "AGUA|ALCANTARILL|DESAG|EDUCATIV|COLEGIO|SALUD|PISTA|VEREDA|VIAL|PUENTE|RIEGO|ESTADIO|LOSA|MERCADO"
+
+
+def ejemplos(p, inv, cen):
+    """Una obra real por departamento y eleccion: empezo en el anio electoral, se pago entre 25% y
+    75% de su costo y no volvio a recibir pagos desde que entro el nuevo alcalde."""
+    g = p.groupby(["obra", "PROYECTO", "UBIGEO"]).agg(ini=("t", "min"), fin=("t", "max"),
+                                                       pag=("DEVENGADO", "sum")).reset_index()
+    g = g.join(inv, on="PROYECTO")
+    g["av"] = g["pag"] / g["costo"]
+    g["UBIGEO"] = g["UBIGEO"].where(g["UBIGEO"].str[-2:] != "00", g["UBIGEO"].str[:4] + "01")
+    g = g[g["av"].between(0.25, 0.75) & g["costo"].between(1e6, 40e6)
+          & g["NOMBRE_INVERSION"].str.upper().str.contains(VISIBLES, na=False) & g["UBIGEO"].isin(cen.index)
+          & ~g["NOMBRE_INVERSION"].str.contains("\ufffd", na=True)]  # nombres con tildes rotas en origen
+    res = {}
+    for E in [2014, 2018, 2022]:
+        e = g[(g["ini"] // 12 == E) & (g["ini"] % 12 < 10) & (g["fin"] // 12 == E)]
+        for dep, h in [("PE", e)] + list(e.groupby(e["UBIGEO"].str[:2])):
+            r = h.sort_values("costo").iloc[-1]
+            res.setdefault(dep, {})[str(E)] = {
+                "n": r["NOMBRE_INVERSION"].capitalize()[:140], "lugar": cen.at[r["UBIGEO"], "nombre"],
+                "costo": round(r["costo"] / 1e6, 1), "pct": round(100 * r["av"]),
+                "ini": f"{MESES_C[r['ini'] % 12]} {E}", "fin": f"{MESES_C[r['fin'] % 12]} {E}"}
+    return res
+
+
 def main():
     p = A.pagos()
     d = inconclusas(p)
@@ -154,6 +181,7 @@ def main():
         "departamentos": dict(sorted(deps.items(), key=lambda x: x[1])),
         "abandono": abandono,
         "partido": cambio_partido(d),
+        "ejemplos": ejemplos(p, inversiones(), centroides()),
         "regresion": json.loads((PROC / "resultados_ejecucion.json").read_text()),
         "paralizadas": int((pd.read_excel(ORIG / "obras_paralizadas_jun2026.xlsx")
                             .filter(like="NIVEL").iloc[:, 0].astype(str)
