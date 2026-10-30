@@ -30,7 +30,6 @@ El dashboard permite buscar un distrito y elegir departamento, provincia, tamañ
 **Estudios citados**
 
 - Armas, J. y Puppo, P. (2021). [Ciclos políticos y la prohibición de la reelección de autoridades subnacionales en el Perú](https://repositorio.up.edu.pe/backend/api/core/bitstreams/1156970d-29bf-487d-b3f5-c4a8d86a71f3/content). En *Economía aplicada. Ensayos de investigación económica 2020*. Universidad del Pacífico.
-- Calle, F. (2025). [Term Limits and the Spatial Allocation of Capital by the Public Sector](https://knowledge.uchicago.edu/record/14893). Tesis doctoral, Universidad de Chicago.
 - Guzmán, J. (2015). [El impacto de las inversiones municipales en la probabilidad de reelección de los alcaldes a nivel distrital en el Perú](https://repositorio.up.edu.pe/handle/11354/1017). Tesis de maestría, Universidad del Pacífico.
 - Jiménez, A., Merino, C. y Sosa, J. C. (2020). [Local Public Investment Drivers in Peru](https://doi.org/10.18800/economia.202002.003). *Economía*, 43(86), 57-78.
 - Pebe, C., Radas, N. y Torres, J. (2017). [Canon minero y ciclo político presupuestal en las municipalidades distritales del Perú, 2002-2011](https://www.cepal.org/es/publicaciones/42699-canon-minero-ciclo-politico-presupuestal-municipalidades-distritales-peru-2002). *Revista CEPAL*, 123.
