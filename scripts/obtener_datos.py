@@ -4,12 +4,16 @@
 - {anio}-Gasto*.csv: gasto de todo el Estado (3-10 GB por anio). Se descarga a una
   carpeta temporal y se agrega a municipalidad x mes x rubro x funcion, y a pagos por obra.
 - {anio}-Transferencias.csv: transferencias a cada municipalidad (canon, FONCOMUN...), 2004-2026.
+- ERM{anio}_Municipal_{Distrital|Provincial}.csv: resultados oficiales por mesa de la ONPE
+  (Plataforma Nacional de Datos Abiertos), elecciones municipales 2006-2022.
 
 Uso: python scripts/obtener_datos.py inversiones
+     python scripts/obtener_datos.py elecciones
      python scripts/obtener_datos.py gasto|transferencias <carpeta_temporal> 2022 ...
 """
 import subprocess
 import sys
+import zipfile
 from datetime import date
 from pathlib import Path
 
@@ -138,9 +142,28 @@ def gasto(anio, carpeta):
     print(f"{anio}: listo, {len(df):,} filas; {ob['PROYECTO'].nunique():,} obras ({date.today()})")
 
 
+def elecciones():
+    # 2018 viene como "..._total.zip"; el resto sin sufijo.
+    E = ORIG / "elecciones" / "onpe"
+    E.mkdir(parents=True, exist_ok=True)
+    for anio in [2006, 2010, 2014, 2018, 2022]:
+        for nivel in ["Distrital", "Provincial"]:
+            nombre = f"ERM{anio}_Municipal_{nivel}{'_total' if anio == 2018 else ''}.zip"
+            z = E / nombre
+            subprocess.run(["curl", "-sSL", "-A", "Mozilla/5.0", "-o", str(z),
+                            "https://www.datosabiertos.gob.pe/sites/default/files/" + nombre], check=True)
+            with zipfile.ZipFile(z) as f:
+                csv = [n for n in f.namelist() if n.lower().endswith(".csv")][0]
+                (E / f"ERM{anio}_Municipal_{nivel}.csv").write_bytes(f.read(csv))
+            z.unlink()
+            print(f"ERM{anio} {nivel}")
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "inversiones":
         inversiones()
+    elif sys.argv[1] == "elecciones":
+        elecciones()
     else:
         fuente = {"gasto": gasto, "transferencias": transferencias}
         for a in sys.argv[3:]:

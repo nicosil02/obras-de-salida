@@ -81,80 +81,66 @@ def clave(*cols):
             .str.upper().str.replace(r"[^A-Z|]", "", regex=True))
 
 
-def elecciones():
-    """Ganador de cada eleccion distrital (2006-2022) con su partido y margen.
-
-    2010-2018: resultados por distrito con ubigeo INEI. 2022: resultados ONPE por mesa,
-    con ubigeo RENIEC (se pasa a INEI cruzando por nombre). 2006: autoridades de Infogob,
-    sin ubigeo (tambien por nombre)."""
-    E = ORIG / "elecciones"
-    filas = []
-    for anio in [2010, 2014, 2018]:
-        d = pd.read_stata(E / f"elecciones{anio}distb.dta")
-        d.columns = [c.replace("Organizacin_Poltica", "OrganizaciónPolítica") for c in d.columns]
-        d = d[d["Votos_porc"].notna()]  # solo organizaciones (no blancos ni nulos)
-        g = d.sort_values("Votos", ascending=False).drop_duplicates("Ubigeo")
-        filas.append(pd.DataFrame({
-            "UBIGEO": g["Ubigeo"].astype(str).str.zfill(6), "anio": anio,
-            "ganador": g["OrganizaciónPolítica"], "pct_ganador": g["Votos_ganador_porc"],
-            "margen": g["margvictoria"], "n_partidos": g["N_Partidos"],
-            "clave": clave(g.iloc[:, list(g.columns).index("Provincia") - 1],
-                           g["Provincia"], g["Distrito"])}))
-    base = pd.concat(filas)
-    # Nombre -> ubigeo INEI: de las elecciones y, para distritos creados despues de 2018,
-    # de las inversiones del MEF.
-    mef = pd.read_csv(ORIG / "DETALLE_INVERSIONES.csv", dtype=str,
-                      usecols=["DEPARTAMENTO", "PROVINCIA", "DISTRITO", "UBIGEO"]).dropna()
-    mef["clave"] = clave(mef["DEPARTAMENTO"], mef["PROVINCIA"], mef["DISTRITO"])
-    a_inei = pd.concat([base[["clave", "UBIGEO"]], mef[["clave", "UBIGEO"]]]) \
-        .drop_duplicates("clave").set_index("clave")["UBIGEO"]
-
-    e = pd.read_csv(E / "ERM2022_Municipal_Distrital.csv", sep=";", encoding="utf-8-sig",
-                    dtype={"UBIGEO": str}, usecols=["UBIGEO", "DEPARTAMENTO", "PROVINCIA",
-                                                    "DISTRITO", "AGRUPACION_POLITICA",
-                                                    "VOTOS_OBTENIDOS"], low_memory=False)
+def onpe(anio, nivel):
+    """Ganador de cada eleccion municipal segun los resultados oficiales por mesa de la ONPE."""
+    c = ["DEPARTAMENTO", "PROVINCIA", "DISTRITO", "AGRUPACION_POLITICA", "VOTOS_OBTENIDOS"]
+    f = ORIG / "elecciones" / "onpe" / f"ERM{anio}_Municipal_{nivel}.csv"
+    try:
+        e = pd.read_csv(f, sep=";", dtype=str, usecols=c, encoding="utf-8-sig")
+    except UnicodeDecodeError:  # 2014 y 2018 vienen en latin-1
+        e = pd.read_csv(f, sep=";", dtype=str, usecols=c, encoding="cp1252")
     # Mesas no contabilizadas traen texto en VOTOS_OBTENIDOS: cuentan como 0.
     e["VOTOS_OBTENIDOS"] = pd.to_numeric(e["VOTOS_OBTENIDOS"], errors="coerce").fillna(0)
     e = e[e["AGRUPACION_POLITICA"].notna()]
-    v = e.groupby(["DEPARTAMENTO", "PROVINCIA", "DISTRITO", "AGRUPACION_POLITICA"],
-                  as_index=False)["VOTOS_OBTENIDOS"].sum()
-    v["pct"] = v["VOTOS_OBTENIDOS"] / v.groupby(["DEPARTAMENTO", "PROVINCIA", "DISTRITO"])[
-        "VOTOS_OBTENIDOS"].transform("sum")
+    # La eleccion provincial se vota en toda la provincia: se agrega por provincia.
+    lugar = ["DEPARTAMENTO", "PROVINCIA"] + (["DISTRITO"] if nivel == "Distrital" else [])
+    v = e.groupby(lugar + ["AGRUPACION_POLITICA"], as_index=False)["VOTOS_OBTENIDOS"].sum()
+    v["pct"] = v["VOTOS_OBTENIDOS"] / v.groupby(lugar)["VOTOS_OBTENIDOS"].transform("sum")
     v = v.sort_values("pct", ascending=False)
-    top = v.groupby(["DEPARTAMENTO", "PROVINCIA", "DISTRITO"]).agg(
+    top = v.groupby(lugar).agg(
         ganador=("AGRUPACION_POLITICA", "first"), pct_ganador=("pct", "first"),
         segundo=("pct", lambda s: s.iloc[1] if len(s) > 1 else 0.0),
         n_partidos=("pct", "size")).reset_index()
-    top["clave"] = clave(top["DEPARTAMENTO"], top["PROVINCIA"], top["DISTRITO"])
-    top["UBIGEO"] = top["clave"].map(a_inei)
     top["margen"] = top["pct_ganador"] - top["segundo"]
-    top["anio"] = 2022
+    top["anio"] = anio
+    return top
 
-    i = pd.read_excel(E / "ERM2006_Autoridades_Distrital.xlsx")
-    i.columns = ["region", "provincia", "distrito", "cargo"] + list(i.columns[4:])
-    i = i[i["cargo"].str.contains("ALCALDE", na=False)]
-    org = [c for c in i.columns if "Organizaci" in c and "Tipo" not in c][0]
-    pct = [c for c in i.columns if c.startswith("%")][0]
-    i = pd.DataFrame({"clave": clave(i["region"], i["provincia"], i["distrito"]),
-                      "ganador": i[org], "pct_ganador": i[pct], "anio": 2006})
-    i["UBIGEO"] = i["clave"].map(a_inei)
 
-    # Capitales de provincia: las gobierna la municipalidad provincial (ubigeo PPPP01).
-    # Ganadores 2014-2022 de los archivos de Infogob procesados por el proyecto vigia-peru.
-    prov = []
-    for anio in [2014, 2018, 2022]:
-        j = json.loads((E / f"autoridades-{anio}-vigia.json").read_text(encoding="utf-8"))
-        prov += [{"UBIGEO": r["u"] + "01", "anio": anio, "ganador": j["orgs"][r["o"]]["n"].upper(),
-                  "pct_ganador": r["p"], "nivel": "provincial"} for r in j["provincial"]]
+def elecciones():
+    """Ganador de cada eleccion municipal (2006-2022) con su partido y margen.
+
+    Fuente: resultados oficiales por mesa de la ONPE. La ONPE usa el ubigeo de RENIEC, asi que
+    se pasa al ubigeo INEI cruzando por nombre de departamento, provincia y distrito."""
+    # Nombre -> ubigeo INEI: mapa de distritos y, para nombres antiguos o distritos nuevos,
+    # las inversiones del MEF.
+    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    g = pd.DataFrame([f["properties"] for f in geo["features"]])
+    g = g.rename(columns={"NOMBDEP": "d", "NOMBPROV": "p", "NOMBDIST": "n", "IDDIST": "u"})
+    mef = pd.read_csv(ORIG / "DETALLE_INVERSIONES.csv", dtype=str,
+                      usecols=["DEPARTAMENTO", "PROVINCIA", "DISTRITO", "UBIGEO"]).dropna()
+    a_inei = pd.concat([pd.DataFrame({"clave": clave(g["d"], g["p"], g["n"]), "UBIGEO": g["u"]}),
+                        pd.DataFrame({"clave": clave(mef["DEPARTAMENTO"], mef["PROVINCIA"], mef["DISTRITO"]),
+                                      "UBIGEO": mef["UBIGEO"]})])         .drop_duplicates("clave").set_index("clave")["UBIGEO"]
+    # Provincia -> capital (ubigeo PPPP01): la gobierna la municipalidad provincial.
+    a_prov = (a_inei.str[:4] + "01").groupby(a_inei.index.str.rsplit("|", n=1).str[0]).first()
+
+    dist, prov = [], []
+    for anio in [2006, 2010, 2014, 2018, 2022]:
+        d = onpe(anio, "Distrital")
+        d["UBIGEO"] = clave(d["DEPARTAMENTO"], d["PROVINCIA"], d["DISTRITO"]).map(a_inei)
+        p = onpe(anio, "Provincial")
+        p["UBIGEO"] = clave(p["DEPARTAMENTO"], p["PROVINCIA"]).map(a_prov)
+        print(f"{anio}: sin ubigeo distrital {d['UBIGEO'].isna().mean():.1%}, provincial {p['UBIGEO'].isna().mean():.1%}")
+        dist.append(d); prov.append(p)
     cols = ["UBIGEO", "anio", "nivel", "ganador", "pct_ganador", "margen", "n_partidos"]
-    el = pd.concat([i, base, top]).assign(nivel="distrital")
-    el = pd.concat([el, pd.DataFrame(prov)])
-    sin = el["UBIGEO"].isna().groupby(el["anio"]).mean()
-    print("sin ubigeo por anio:", sin.round(3).to_dict())
+    el = pd.concat([pd.concat(dist).assign(nivel="distrital"), pd.concat(prov).assign(nivel="provincial")])
     el = el.dropna(subset=["UBIGEO"]).reindex(columns=cols).sort_values(["UBIGEO", "anio"])
+    el = el.drop_duplicates(["UBIGEO", "anio", "nivel"])
     # Cambio de partido respecto de la eleccion anterior en el mismo distrito.
-    previo = el.groupby("UBIGEO")["ganador"].shift()
-    el["cambio_partido"] = (el["ganador"].str.strip() != previo.str.strip()).where(previo.notna())
+    # Se compara sin tildes ni signos: la ONPE escribe el mismo partido con y sin tildes.
+    nom = clave(el["ganador"])
+    previo = nom.groupby([el["UBIGEO"], el["nivel"]]).shift()
+    el["cambio_partido"] = (nom != previo).where(previo.notna())
     return el
 
 
