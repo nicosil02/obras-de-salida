@@ -202,31 +202,10 @@ def distritos():
     (DOCS / "pais.json").write_text(json.dumps({"type": "Feature", "properties": {},
                                                 "geometry": {"type": pais.geom_type, "coordinates": redondear4(mapping(pais)["coordinates"])}},
                                                separators=(",", ":")), encoding="utf-8")
-    limites()
     (DOCS / "prov").mkdir(exist_ok=True)
     for k, v in prov.items():
         (DOCS / "prov" / f"{k}.json").write_text(json.dumps({"type": "FeatureCollection", "features": v}, separators=(",", ":")),
                                                  encoding="utf-8")
-
-
-def limites():
-    """Bordes de departamentos y provincias (líneas), para ver qué zona se elige con cada clic."""
-    import shapefile
-    from shapely.geometry import shape, mapping
-    from shapely.ops import unary_union
-    grupos = {}
-    for sr in shapefile.Reader(str(ORIG / "limites" / "DISTRITOS_inei.shp"), encoding="utf-8").iterShapeRecords():
-        g = shape(sr.shape.__geo_interface__).buffer(0.002)
-        for k in (sr.record["UBIGEO"][:2], sr.record["UBIGEO"][:4]):
-            grupos.setdefault(k, []).append(g)
-    fs = []
-    for k, gs in sorted(grupos.items()):
-        z = unary_union(gs).buffer(-0.002).simplify(0.003)
-        partes = z.geoms if z.geom_type == "MultiPolygon" else [z]
-        # Solo los anillos exteriores, como líneas: así d3 no los toma como polígonos invertidos.
-        lineas = [mapping(q.exterior)["coordinates"] for q in partes if q.area > 1e-4]
-        fs.append({"type": "Feature", "properties": {"u": k}, "geometry": {"type": "MultiLineString", "coordinates": redondear4(lineas)}})
-    (DOCS / "limites.json").write_text(json.dumps({"type": "FeatureCollection", "features": fs}, separators=(",", ":")), encoding="utf-8")
 
 
 def redondear4(c):
