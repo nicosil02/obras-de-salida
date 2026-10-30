@@ -2,7 +2,7 @@
 
 **¿Los alcaldes del Perú dejan la plata de obras para el final de su gestión? ¿Y qué pasa con esas obras cuando entra el siguiente?**
 
-Desde que no pueden reelegirse, los alcaldes gastan 37% más en obras entre la elección y su salida que en los mismos meses de otros años. Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.
+Desde que no pueden reelegirse, los alcaldes gastan más en obras justo antes de irse. En 2022 gastaron 30% más de junio a diciembre que en los mismos meses de 2021. Cuando se van, 3 de cada 10 obras a medias se quedan sin pagar.
 
 - Dashboard: https://nicosil02.github.io/obras-de-salida/
 - Reel: (enlace pendiente)
@@ -48,11 +48,14 @@ El dashboard permite buscar un distrito y elegir departamento, provincia, tamañ
 
 ## Hallazgos
 
-1. **Gastan más cuando ya se van.** Desde 2015 el gasto en obras sube 18% en la campaña y 37% entre la elección y la salida del alcalde, frente a los mismos meses de otros años. Antes de 2015, cuando el alcalde podía reelegirse, casi no había ese salto final. Los estudios con datos anuales tampoco encontraban un ciclo claro antes de 2015 (Pebe, Radas y Torres, 2017; Armas y Puppo, 2021); con datos mensuales el salto de fin de gestión sí se ve. Comparando octubre a diciembre con los mismos meses del año anterior, el gasto cambió +2% en 2010 y -9% en 2014, cuando el alcalde podía reelegirse, y +25% en 2018 y +38% en 2022, cuando ya no. En campaña el gasto sube en casi todas las elecciones (+13%, 0%, +14% y +22%), y cuando el alcalde podía reelegirse lo que más subía eran las obras nuevas (36% más obras con su primer pago en los meses de campaña). De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (soles de 2022), y 63% de los distritos gastó más.
+1. **Gastan más justo antes de irse.** De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (soles de 2022), y 63% de los distritos gastó más. En 2018 fue 19%. En 2010 y 2014, cuando el alcalde podía reelegirse, fue 7% y -5%. La regresión lo confirma. Desde 2015 el gasto de octubre a diciembre del año de elecciones es 37% mayor que en esos meses de otros años, y antes de 2015 no hay un efecto claro. Los estudios con datos anuales tampoco encontraban un ciclo claro antes de 2015 (Pebe, Radas y Torres, 2017; Armas y Puppo, 2021).
 2. **Cuando cambia el alcalde, más obras se quedan a medias.** En enero de 2023, 28% de las obras a medias (3,511) no volvió a recibir pagos en dos años. En enero de 2021, sin cambio de alcalde, fue 18%. La diferencia se repite en 2011, 2015 y 2019.
-3. **Importa quién entra.** Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).
 
-Además, crecen más las obras que se ven. De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) subió 148% frente a los mismos meses de 2021 (93% en 2018), mientras que el de agua y desagüe subió 7% (y bajó 17% en 2018).
+### Otros resultados (no están en el dashboard)
+
+- **Importa quién entra.** Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).
+
+- **Crecen más las obras que se ven.** De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) subió 148% frente a los mismos meses de 2021 (93% en 2018), mientras que el de agua y desagüe subió 7% (y bajó 17% en 2018).
 
 ## Limitaciones
 
