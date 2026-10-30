@@ -6,6 +6,7 @@
 - {anio}-Transferencias.csv: transferencias a cada municipalidad (canon, FONCOMUN...), 2004-2026.
 - ERM{anio}_Municipal_{Distrital|Provincial}.csv: resultados oficiales por mesa de la ONPE
   (Plataforma Nacional de Datos Abiertos), elecciones municipales 2006-2022.
+- Autoridades_Electas_20251113.xls: alcaldes y regidores electos 2014-2022 del JNE, con DNI.
 
 Uso: python scripts/obtener_datos.py inversiones
      python scripts/obtener_datos.py elecciones
@@ -157,6 +158,11 @@ def elecciones():
                 (E / f"ERM{anio}_Municipal_{nivel}.csv").write_bytes(f.read(csv))
             z.unlink()
             print(f"ERM{anio} {nivel}")
+    # Autoridades electas del JNE (2014-2022), con DNI: permite seguir a cada persona.
+    J = ORIG / "elecciones" / "jne"
+    J.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["curl", "-sSL", "-A", "Mozilla/5.0", "-o", str(J / "Autoridades_Electas_20251113.xls"),
+                    "https://www.datosabiertos.gob.pe/sites/default/files/Autoridades_Electas_20251113.xls"], check=True)
 
 
 if __name__ == "__main__":

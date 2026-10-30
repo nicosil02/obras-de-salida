@@ -110,6 +110,19 @@ def cambio_partido(d):
             for (a, c), v in t.items()]
 
 
+def relaciones(d):
+    """Abandono segun la relacion del alcalde que entra con la gestion que sale (2019 y 2023)."""
+    r = pd.read_parquet(PROC / "relaciones_alcaldes.parquet")
+    r["anio"] = r["anio"] + 1  # la eleccion de 2018 define la transicion de enero 2019
+    m = d[d["transicion"]].merge(r, on=["UBIGEO", "anio"], how="inner")
+    m["grupo"] = np.select([m["mismo_partido"], m["fue_regidor"], m["fue_alcalde"]],
+                           ["mismo", "regidor", "exalcalde"], "ruptura")
+    t = m.groupby("grupo").agg(obras=("abandonada", "size"), munis=("UBIGEO", "nunique"),
+                               abandono=("abandonada", "mean"))
+    return [{"grupo": g, "obras": int(x.obras), "munis": int(x.munis), "abandono": round(100 * x.abandono, 1)}
+            for g, x in t.iterrows()]
+
+
 def distritos():
     """Geojson liviano para el mapa: ubigeo, nombres y coordenadas con 3 decimales (~100 m)."""
     geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
@@ -185,6 +198,7 @@ def main():
         "departamentos": dict(sorted(deps.items(), key=lambda x: x[1])),
         "abandono": abandono,
         "partido": cambio_partido(d),
+        "relaciones": relaciones(d),
         "ejemplos": ejemplos(p, inversiones(), centroides()),
         "regresion": json.loads((PROC / "resultados_ejecucion.json").read_text()),
         "paralizadas": int((pd.read_excel(ORIG / "obras_paralizadas_jun2026.xlsx")

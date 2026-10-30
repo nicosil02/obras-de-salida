@@ -144,10 +144,58 @@ def elecciones():
     return el
 
 
+def relaciones():
+    """Quien entra en cada municipalidad y su relacion con la gestion que sale (2018 y 2022).
+
+    Fuente: autoridades electas del JNE (datos abiertos), que identifica a cada persona por su
+    DNI. Para cada alcalde electo en E se mira la gestion elegida en E-4 en la misma
+    municipalidad: si su partido es el mismo, si fue regidor (de la lista del alcalde saliente
+    o de otra) y si ya habia sido alcalde."""
+    a = pd.read_excel(ORIG / "elecciones" / "jne" / "Autoridades_Electas_20251113.xls")
+    a = a[a["PROCESOELECTORAL"].str.match(r"ELECCIONES REGIONALES Y MUNICIPALES (2014|2018|2022)$")
+          & a["CARGO"].str.contains("ALCALDE|REGIDOR")].copy()
+    a["dni"] = a["DOCUMENTOIDENTIDAD"].astype(str).str.zfill(8)
+    a["nivel"] = a["CARGO"].str.split().str[-1].str.lower()
+    a["alcalde"] = a["CARGO"].str.startswith("ALCALDE")
+    a["partido"] = clave(a["ORGANIZACIONPOLITICA"])
+    # Ubigeo INEI por nombre (como en elecciones); la provincial gobierna la capital PPPP01.
+    geo = json.loads((ORIG / "peru_distrital_simple.geojson").read_text(encoding="utf-8"))
+    g = pd.DataFrame([f["properties"] for f in geo["features"]])
+    a_inei = pd.Series(g["IDDIST"].values, index=clave(g["NOMBDEP"], g["NOMBPROV"], g["NOMBDIST"]))
+    a_prov = (a_inei.str[:4] + "01").groupby(a_inei.index.str.rsplit("|", n=1).str[0]).first()
+    a["UBIGEO"] = clave(a["REGION"], a["PROVINCIA"], a["DISTRITO"]).map(a_inei)
+    prov = a["nivel"] == "provincial"
+    a.loc[prov, "UBIGEO"] = clave(a.loc[prov, "REGION"], a.loc[prov, "PROVINCIA"]).map(a_prov)
+    print(f"autoridades sin ubigeo: {a['UBIGEO'].isna().mean():.1%}")
+    a = a.dropna(subset=["UBIGEO"])
+    # Un alcalde por municipalidad y eleccion: el proclamado primero (no sus reemplazos).
+    alc = (a[a["alcalde"]].sort_values("FEINICIOVIGENCIA")
+           .drop_duplicates(["UBIGEO", "nivel", "ANIOELECCION"]))
+    filas = []
+    for E in [2018, 2022]:
+        nuevo, sale = alc[alc["ANIOELECCION"] == E], alc[alc["ANIOELECCION"] == E - 4]
+        reg = a[(a["ANIOELECCION"] == E - 4) & ~a["alcalde"]]
+        antes = set(zip(alc.loc[alc["ANIOELECCION"] < E, "UBIGEO"], alc.loc[alc["ANIOELECCION"] < E, "dni"]))
+        m = nuevo.merge(sale[["UBIGEO", "nivel", "partido", "dni"]], on=["UBIGEO", "nivel"],
+                        how="inner", suffixes=("", "_sale"))
+        m = m.merge(reg[["UBIGEO", "nivel", "dni", "partido"]].rename(columns={"partido": "partido_reg"}),
+                    on=["UBIGEO", "nivel", "dni"], how="left")
+        filas.append(pd.DataFrame({
+            "UBIGEO": m["UBIGEO"], "anio": E, "nivel": m["nivel"],
+            "mismo_partido": m["partido"] == m["partido_sale"],
+            "fue_regidor": m["partido_reg"].notna(),
+            "regidor_del_saliente": m["partido_reg"] == m["partido_sale"],
+            "fue_alcalde": [(u, d) in antes for u, d in zip(m["UBIGEO"], m["dni"])]}))
+    r = pd.concat(filas).drop_duplicates(["UBIGEO", "anio", "nivel"])
+    print(r.groupby("anio")[["mismo_partido", "fue_regidor", "regidor_del_saliente", "fue_alcalde"]].mean().round(3))
+    return r
+
+
 if __name__ == "__main__":
     PROC.mkdir(parents=True, exist_ok=True)
     el = elecciones()
     el.to_parquet(PROC / "elecciones_distritales.parquet", index=False)
+    relaciones().to_parquet(PROC / "relaciones_alcaldes.parquet", index=False)
     print(el.groupby("anio").agg(n=("UBIGEO", "size"), cambio=("cambio_partido", "mean")).round(3))
     o = obras()
     o.to_parquet(PROC / "obras_municipales.parquet", index=False)

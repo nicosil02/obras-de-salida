@@ -101,7 +101,7 @@
       <button class="play" id="play" type="button">▶ Recorrer las gestiones</button></div>
     <div class="chip" id="chip" hidden></div>
     <p class="nota">Cada gestión dura 4 años. El primer año entra el alcalde y el último hay elecciones.</p>
-    <p class="nota">Datos del MEF, la ONPE y la Contraloría.<br>
+    <p class="nota">Datos del MEF, la ONPE, el JNE y la Contraloría.<br>
       <a href="#metodo">Cómo se calculó</a><br><a href="https://github.com/nicosil02/obras-de-salida">Código y datos</a></p>
   </aside>
 
@@ -140,6 +140,11 @@
             <span><i style="background:var(--acento)"></i>Enero en que entra el nuevo alcalde</span></div>
         </section>
         <section class="panel">
+          <h2>Importa quién entra</h2>
+          <p class="sub">Obras a medias sin pagos según la relación del nuevo alcalde con la gestión que sale. Cambios de 2019 y 2023, todo el Perú.</p>
+          <svg id="relac" viewBox="0 0 560 212" role="img" aria-label="Abandono de obras según quién entra a la alcaldía"></svg>
+        </section>
+        <section class="panel">
           <h2 id="t-rank"></h2>
           <p class="sub">Distritos que gastaron al menos S/ 1 millón en obras en su primer año</p>
           <table><thead><tr><th>Distrito</th><th class="num" id="th1"></th><th class="num" id="th4"></th><th class="num">Cambio</th></tr></thead>
@@ -165,7 +170,7 @@
         <li><b>El último año es el de más gasto.</b> En la gestión 2019-2022 las municipalidades pagaron S/ 12,215 millones en obras en su primer año y S/ 19,556 millones en el último (60% más). Pasa en las cuatro gestiones medidas.</li>
         <li><b>Pasa en 7 de cada 10 distritos.</b> El 70% gastó más en 2022 que en 2019.</li>
         <li><b>Al cambiar de alcalde, entre 28% y 32% de las obras a medias se queda sin pagos</b>, frente a 18% a 22% en años sin cambio.</li>
-        <li><b>Desde 2015 el abandono es mayor cuando gana otro partido</b>, entre 3 y 6 puntos más (en 2023, 28% frente a 25%).</li>
+        <li><b>Importa quién entra.</b> Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28.5%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).</li>
       </ol></div>
       <div><h2>Cómo se calculó</h2><ul>
         <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2007-2026.</li>
@@ -184,6 +189,7 @@
           (<a href="https://www.datosabiertos.gob.pe/dataset/resultados-por-mesa-de-las-elecciones-municipales-distritales-2022-oficina-nacional-de">distritales</a> y
           <a href="https://www.datosabiertos.gob.pe/dataset/resultados-por-mesa-de-las-elecciones-municipales-provinciales-2022-oficina-nacional-de">provinciales</a>,
           un archivo por elección: 2006, 2010, 2014, 2018 y 2022).</li>
+        <li><b>Alcaldes y regidores electos 2014-2022.</b> JNE, <a href="https://www.datosabiertos.gob.pe/dataset/autoridades-electas-en-procesos-electorales-jurado-nacional-de-elecciones">autoridades electas</a>, con DNI para seguir a cada persona.</li>
         <li><b>Obras paralizadas.</b> Contraloría, <a href="https://www.gob.pe/institucion/contraloria/informes-publicaciones/8489152-informe-de-obras-paralizadas-en-el-territorio-nacional-a-junio-de-2026">informe a junio de 2026</a>
           (<span id="paral"></span> obras municipales).</li>
         <li><b>Mapa de distritos.</b> <a href="https://github.com/juaneladio/peru-geojson">peru-geojson</a>, con códigos de ubigeo del INEI.</li>
@@ -193,6 +199,8 @@
         <li>Una obra sin pagos puede haberse terminado más barata o pagarse desde otra entidad. Solo se usan obras con costo conocido (41%).</li>
         <li>En 2007 muchas municipalidades entraron al SIAF a mitad de año. La gestión 2007-2010 usa solo las 1,176 que reportaban desde enero.</li>
         <li>La gestión 2023-2026 sigue en curso (datos hasta septiembre de 2026).</li>
+        <li>Elecciones y autoridades se cruzan con los distritos por nombre; entre 1% y 3% no calzan. Se usa la elección original, no las nuevas elecciones o complementarias.</li>
+        <li>Pocas municipalidades tienen un alcalde que fue regidor del que sale (31) o un exalcalde que vuelve (83).</li>
       </ul></div>
     </div>
     <p style="font-size:12.5px;color:var(--tinta-3);margin-top:24px">Nicolás Silva. Python Intermedio, QLAB PUCP.</p>
@@ -273,7 +281,7 @@ function actualizar() {
     $("chip").innerHTML = `Viendo <b>${f.properties.n}</b> (${f.properties.p})<br><button type="button" id="quitar">Ver todos los distritos</button>`;
     $("quitar").onclick = () => verDistrito(distrito);
   }
-  kpis(s); anual(s, f); mapa(s); abandono(s); ranking(s);
+  kpis(s); anual(s, f); mapa(s); abandono(s); relac(); ranking(s);
 }
 
 function kpis(s) {
@@ -388,6 +396,23 @@ function abandono(s) {
   svg.selectAll("text.t").data(T).join("text").attr("class", "t").attr("x", t => x0(t) + x0.bandwidth() / 2).attr("y", H - m.b + 18)
     .attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", t => t === s.T ? 700 : 400)
     .attr("fill", t => t === s.T ? C.tinta : C.tinta3).text(t => `Cambio de ${t}`);
+}
+
+function relac() {
+  const G = [["regidor", "Otro partido, pero fue regidor de la gestión que sale"], ["mismo", "Del mismo partido que el que sale"],
+             ["ruptura", "Otro partido y sin cargo previo"], ["exalcalde", "Vuelve un exalcalde rival"]];
+  const dat = G.map(([k, l]) => ({ l, ...D.relaciones.find(r => r.grupo === k) }));
+  const svg = d3.select("#relac"); if (!svg.select("rect").empty()) return;
+  const x = d3.scaleLinear().domain([0, 40]).range([0, 470]), fila = 52;
+  const g = svg.selectAll("g").data(dat).join("g").attr("transform", (d, i) => `translate(0,${4 + i * fila})`);
+  g.append("text").attr("y", 13).attr("font-size", 13).attr("fill", C.tinta).text(d => d.l);
+  g.append("text").attr("x", 560).attr("y", 13).attr("text-anchor", "end").attr("font-size", 11.5).attr("fill", C.tinta3)
+    .text(d => `${fmt(d.munis)} municipalidades`);
+  g.append("rect").attr("y", 20).attr("height", 18).attr("rx", 2).attr("width", 0)
+    .attr("fill", d => d.grupo === "exalcalde" || d.grupo === "ruptura" ? C.acento : C.barra)
+    .transition().duration(DUR).attr("width", d => x(d.abandono));
+  g.append("text").attr("x", d => x(d.abandono) + 6).attr("y", 34).attr("font-size", 13).attr("font-weight", 700)
+    .attr("fill", C.tinta).text(d => d.abandono.toLocaleString("es-PE") + "%");
 }
 
 function ranking(s) {
