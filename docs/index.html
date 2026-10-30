@@ -81,8 +81,15 @@
   .texto h2 { font-size: 15px; color: var(--tinta); margin: 0 0 6px; }
   .texto ol, .texto ul { margin: 0; padding-left: 18px; } .texto li { margin-bottom: 6px; }
   .texto a { color: var(--tinta); }
-  .tip { position: fixed; z-index: 10; pointer-events: none; display: none; max-width: 280px; background: var(--papel);
-         border: 1px solid #c9ccd0; border-radius: 6px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 12px rgba(31,35,40,.12); }
+  .tip { position: fixed; z-index: 10; pointer-events: none; display: none; max-width: 300px; background: var(--papel);
+         border: 1px solid #c9ccd0; border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.4; box-shadow: 0 6px 18px rgba(31,35,40,.14); }
+  .tip .tn { font-size: 12px; color: var(--tinta-3); text-transform: uppercase; letter-spacing: .04em; }
+  .tip .tz { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .tip .tc { font-size: 34px; font-weight: 800; line-height: 1; }
+  .tip .ts { font-size: 12.5px; color: var(--tinta-3); margin: 4px 0 8px; }
+  .tip .tm { display: flex; gap: 16px; font-size: 13px; border-top: 1px solid #e4e4e1; padding-top: 8px; }
+  .tip .tm b { display: block; font-size: 15px; }
+  .tip .th { margin-top: 8px; font-size: 12px; color: var(--acento); font-weight: 600; }
   @media (max-width: 1100px) {
     .app { grid-template-columns: 1fr; } aside { position: static; min-height: 0; border-right: 0; border-bottom: 1px solid var(--linea); }
     .gestiones { grid-template-columns: repeat(4, 1fr); }
@@ -169,9 +176,9 @@
         <p class="sub">En soles de 2022. Haz clic en un departamento, luego en una provincia y luego en un distrito. Clic en el fondo para volver.</p>
         <div class="mapa-w"><svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos según cuánto cambió su gasto"></svg>
           <canvas id="mapa-c" aria-hidden="true"></canvas></div>
-        <div class="ley"><span><i style="background:var(--acento)"></i>Más del doble</span>
-          <span><i style="background:var(--acento-claro)"></i>Más, pero menos del doble</span>
-          <span><i style="background:var(--barra)"></i>Igual o menos</span><span><i style="background:var(--vacio)"></i>Sin datos</span></div>
+        <div class="ley"><span><i style="background:var(--acento)"></i>Subió más de 100%</span>
+          <span><i style="background:var(--acento-claro)"></i>Subió hasta 100%</span>
+          <span><i style="background:var(--barra)"></i>No subió</span><span><i style="background:var(--vacio)"></i>Sin datos</span></div>
       </section>
       <div class="apilado">
         <section class="panel">
@@ -215,7 +222,7 @@
         <li><b>Gastan más cuando ya se van.</b> Desde 2015, cuando se prohibió la reelección inmediata, el gasto en obras sube 18% en los meses de campaña (junio a setiembre) y 37% entre la elección y la salida del alcalde (octubre a diciembre), frente a los mismos meses de otros años. Antes de 2015 el gasto también subía en campaña, sobre todo en obras nuevas, pero casi no había ese salto final.</li>
         <li><b>En 2022 pasó en 6 de cada 10 distritos.</b> De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en obras, 30% más que en los mismos meses de 2021 (en soles de 2022).</li>
         <li><b>Al cambiar de alcalde, entre 28% y 32% de las obras a medias se queda sin pagos</b>, frente a 18% a 22% en años sin cambio.</li>
-        <li><b>Crecen más las obras que se ven.</b> De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) fue 2.5 veces el de los mismos meses de 2021, y en 2018, 1.9 veces. El de agua y desagüe subió 7% en 2022 y bajó 17% en 2018.</li>
+        <li><b>Crecen más las obras que se ven.</b> De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) subió 148% frente a los mismos meses de 2021, y en 2018, 93%. El de agua y desagüe subió 7% en 2022 y bajó 17% en 2018.</li>
         <li><b>Importa quién entra.</b> Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28.4%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).</li>
       </ol></div>
       <div><h2>Cómo se calculó</h2><ul>
@@ -283,7 +290,7 @@ const nombreMed = () => medida === "o" ? "obras con pagos" : medida === "g" ? "g
 const fv = n => medida === "o" ? fmt(n) + " obras" : `S/ ${n < 10 ? n.toFixed(1) : fmt(n)} millones`;
 const verbo = (pl = true) => (medida === "o" ? (pl ? "tuvieron" : "tuvo") + " más obras con pagos"
   : (pl ? "gastaron" : "gastó") + " más" + (tipo() ? " en " + nombreMed().slice(9) : ""));
-const cambio = r => r >= 2 ? `${r.toFixed(1)} veces` : `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1))}%`;
+const cambio = r => `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1)).toLocaleString("en-US")}%`;
 const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
 let TURNO = 0, PROV = {}, MAPA = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
 
@@ -588,9 +595,13 @@ function mapa(s) {
       if (MAPA.hov !== (ok ? k : null)) { MAPA.hov = ok ? k : null;
         g.select("path.hov").attr("d", ok && n < 6 ? (MAPA.fondos["h" + k] ??= path(MAPA.exterior(feats.filter(x => grupo(x) === k)))) : null).raise(); }
       const d = s.dist.filter(x => x.c.u.startsWith(k)).reduce((t, x) => ({ a: t.a + x.a, b: t.b + x.b }), { a: 0, b: 0 }), hay = dentro(f) && s.dist.some(x => x.c.u.startsWith(k));
-      verTip(e, `<b>${nombre(k, f)}</b>` + (n === 6 ? ` (${f.properties.p})` : "") + "<br>" + (hay
-        ? `Jun a dic ${s.pre}: ${fv(d.a)}<br>Jun a dic ${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
-        : "Fuera de la zona elegida") + `<br><i>${sel && f !== sel || !dentro(f) ? "Clic para volver" : n === 6 ? "Clic para ver su gasto año por año" : "Clic para acercarte"}</i>`); })
+      const nivel = n === 2 ? "Departamento" : n === 4 ? "Provincia" : `Distrito de ${f.properties.p}`;
+      verTip(e, `<div class="tn">${nivel}</div><div class="tz">${nombre(k, f)}</div>` + (hay
+        ? (d.a > 0 ? `<div class="tc" style="color:${d.b > d.a ? C.acento : C.tinta}">${cambio(d.b / d.a)}</div>` : "") +
+          `<div class="ts">${nombreMed()[0].toUpperCase() + nombreMed().slice(1)} de junio a diciembre, ${s.fin} frente a ${s.pre}</div>` +
+          `<div class="tm"><div>${s.pre}<b>${fv(d.a)}</b></div><div>${s.fin}<b>${fv(d.b)}</b></div></div>`
+        : `<div class="ts">Sin datos</div>`) +
+        `<div class="th">${sel && f !== sel ? "Clic para volver" : n === 6 ? "Clic para ver su gasto año por año" : "Clic para acercarte"}</div>`); })
     .on("mouseleave", ocultarTip);
   const clave = s.area + "|" + (sel ? distrito : "") + "|" + feats.filter(dentro).length;
   if (MAPA.clave !== clave) {  // reordenar y recalcular el fondo solo si cambió la zona

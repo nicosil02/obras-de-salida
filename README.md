@@ -52,7 +52,7 @@ El dashboard permite buscar un distrito y elegir departamento, provincia, tamañ
 2. **Cuando cambia el alcalde, más obras se quedan a medias.** En enero de 2023, 28% de las obras a medias (3,511) no volvió a recibir pagos en dos años. En enero de 2021, sin cambio de alcalde, fue 18%. La diferencia se repite en 2011, 2015 y 2019.
 3. **Importa quién entra.** Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).
 
-Además, crecen más las obras que se ven. De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) fue 2.5 veces el de los mismos meses de 2021 (1.9 veces en 2018), mientras que el de agua y desagüe subió 7% (y bajó 17% en 2018).
+Además, crecen más las obras que se ven. De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) subió 148% frente a los mismos meses de 2021 (93% en 2018), mientras que el de agua y desagüe subió 7% (y bajó 17% en 2018).
 
 ## Limitaciones
 

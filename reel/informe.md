@@ -20,7 +20,7 @@ De junio a diciembre de 2022 las municipalidades pagaron S/ 14,971 millones en o
 
 ## 3. Crecen más las obras que se ven
 
-De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) fue 2.5 veces el de los mismos meses de 2021. En 2018 fue 1.9 veces. El gasto en agua y desagüe subió apenas 7% en 2022 y bajó 17% en 2018. Cultura y deporte es la función del clasificador del MEF que incluye estadios y losas deportivas.
+De junio a diciembre de 2022 el gasto en cultura y deporte (estadios, losas) subió 148% frente a los mismos meses de 2021. En 2018 subió 93%. El gasto en agua y desagüe subió apenas 7% en 2022 y bajó 17% en 2018. Cultura y deporte es la función del clasificador del MEF que incluye estadios y losas deportivas.
 
 ## 4. Cuando cambia el alcalde, más obras se quedan a medias
 
