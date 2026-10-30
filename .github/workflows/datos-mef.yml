@@ -1,0 +1,30 @@
+# Descarga el gasto del MEF (3-10 GB por anio) en GitHub Actions y guarda como artefacto
+# solo el resultado procesado (pocos MB). Se lanza a mano:
+#   gh workflow run datos-mef -f anios='[2016]'
+name: datos-mef
+on:
+  workflow_dispatch:
+    inputs:
+      anios:
+        description: "Lista JSON de anios, p. ej. [2016] o [2005, 2006]"
+        required: true
+jobs:
+  gasto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        anio: ${{ fromJSON(inputs.anios) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas pyarrow
+      - run: sudo mkdir -p /mnt/mef && sudo chmod 777 /mnt/mef
+      - run: python scripts/obtener_datos.py gasto /mnt/mef ${{ matrix.anio }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gasto-${{ matrix.anio }}
+          path: datos/procesados/*_${{ matrix.anio }}.parquet
