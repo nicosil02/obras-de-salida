@@ -249,7 +249,7 @@ const verbo = (pl = true) => (medida === "o" ? (pl ? "tuvieron" : "tuvo") + " m�
   : (pl ? "gastaron" : "gastó") + " más" + (tipo() ? " en " + nombreMed().slice(9) : ""));
 const cambio = r => r >= 2 ? `${r.toFixed(1)} veces` : `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1))}%`;
 const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
-let PROV = {}, MAPA = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
+let TURNO = 0, PROV = {}, MAPA = {}, POB, D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
 
 const tip = $("tip");
 function verTip(e, html) { tip.style.display = "block"; tip.innerHTML = html;
@@ -349,7 +349,9 @@ function actualizar() {
     $("chip").innerHTML = `Viendo <b>${s.sel.n}</b><br><button type="button" id="quitar">Ver todos los distritos</button>`;
     $("quitar").onclick = () => verDistrito(null);
   }
-  kpis(s); anual(s, f); mapa(s); abandono(s); relac(); ranking(s);
+  // Si el mapa hace zoom, el resto se actualiza al terminar: animar todo a la vez lo traba.
+  const turno = ++TURNO, dur = mapa(s), resto = () => turno === TURNO && (kpis(s), anual(s, f), abandono(s), relac(), ranking(s));
+  dur ? setTimeout(resto, dur) : resto();
 }
 
 function kpis(s) {
@@ -481,17 +483,28 @@ function mapa(s) {
         ? `${ini}: ${fv(d.a)}<br>${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
         : "Fuera de la zona elegida") + `<br><i>${sel && f !== sel || !dentro(f) ? "Clic para volver a la vista anterior" : "Clic para ver su gasto año por año"}</i>`); })
     .on("mouseleave", ocultarTip);
-  ps.filter(dentro).raise(); ps.filter(f => f === sel).raise();
+  const clave = s.area + "|" + (sel ? distrito : "") + "|" + feats.filter(dentro).length;
+  if (MAPA.clave !== clave) {  // reordenar y recalcular el fondo solo si cambió la zona
+    ps.filter(dentro).raise(); ps.filter(f => f === sel).raise();
   // Capa de fondo con el contorno exterior de la zona: tapa las rendijas que deja la
   // simplificación entre distritos vecinos (se veían como ríos blancos al acercar).
-  g.select("path.fondo").attr("d", path(MAPA.exterior(feats.filter(dentro)))).attr("fill", "#c9ccd0");
+    // Para todo el Perú sirve el contorno del país; el de cada zona se calcula una vez y se guarda.
+    const fk = s.area + "|" + feats.filter(dentro).length;
+    MAPA.fondos ??= {};
+    // Se dibuja al terminar el zoom para no frenar el comienzo de la animación.
+    const fondo = () => g.select("path.fondo").attr("fill", "#c9ccd0")
+      .attr("d", s.area === "PE" ? path(MAPA.pais) : (MAPA.fondos[fk] ??= path(MAPA.exterior(feats.filter(dentro)))));
+    mueve ? setTimeout(fondo, 900) : fondo();
+  }
   // Si la cámara se mueve, los colores cambian de una vez (animar ambos a la vez traba el zoom).
   (mueve ? ps : ps.transition().duration(DUR)).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#d5d7da")
     .style("opacity", f => !dentro(f) ? 0.3 : sel && f !== sel ? 0.45 : 1);
   const tr = v => { const k = 600 / v[2]; return `translate(${220 - k * v[0]},${300 - k * v[1]}) scale(${k})`; };
   // Solo se anima si la cámara cambia de lugar: así una descarga tardía no reinicia el zoom.
-  if (mueve) g.interrupt().transition().duration(DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0).ease(d3.easeCubicInOut)
-    .attrTween("transform", () => t => tr(i(t)));
+  const dur = mueve && DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0;
+  if (mueve) g.interrupt().transition().duration(dur).ease(d3.easeCubicInOut).attrTween("transform", () => t => tr(i(t)));
+  MAPA.clave = clave;
+  return dur;
 }
 
 function abandono(s) {
