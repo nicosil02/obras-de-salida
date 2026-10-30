@@ -64,7 +64,8 @@
   .chip { margin-bottom: 22px; padding: 10px; border: 1px solid var(--acento); border-radius: 6px; font-size: 13.5px; }
   .chip button { font: inherit; font-size: 13px; margin-top: 6px; padding: 4px 10px; border: 1px solid #c9ccd0; border-radius: 6px;
                  background: var(--papel); cursor: pointer; }
-  #mapa path { cursor: pointer; vector-effect: non-scaling-stroke; }
+  #mapa path { cursor: pointer; }
+  #mapa g.z { will-change: transform; }
   #mapa { overflow: hidden; }
   .porque p b { color: var(--tinta); }
   .texto { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 16px; margin-top: 16px; font-size: 13.5px; color: var(--tinta-2); }
@@ -439,7 +440,7 @@ function mapa(s) {
   const dentro = f => s.area === "PE" || f.properties.u.startsWith(s.area);
   // Mapas detallados de las provincias de la zona elegida (se cargan una vez).
   if (s.area !== "PE") Object.keys(D.provincias).filter(k => k.startsWith(s.area) || s.area.startsWith(k)).forEach(k => {
-    if (!PROV[k]) { PROV[k] = "cargando"; fetch(`prov/${k}.json`).then(r => r.json()).then(j => { PROV[k] = j.features; actualizar(); }); }
+    if (!PROV[k]) { PROV[k] = "cargando"; fetch(`prov/${k}.json`).then(r => r.json()).then(j => { PROV[k] = j.features; mapa(estado()); }); }
   });
   const feats = GEO.features.map(f => {
     const det = s.area !== "PE" && dentro(f) && PROV[f.properties.u.slice(0, 4)];
@@ -461,10 +462,19 @@ function mapa(s) {
   }
   const path = MAPA.path, sel = distrito && feats.find(f => f.properties.u === distrito);
   const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
+  // Vista = [centro x, centro y, alto visible]; el mapa completo es [220, 300, 600].
+  const vista = (b, holgura) => { const [[x0, y0], [x1, y1]] = b;
+    return [(x0 + x1) / 2, (y0 + y1) / 2, Math.max(y1 - y0, (x1 - x0) * 600 / 440) * holgura]; };
+  let v = [220, 300, 600];
+  if (s.area !== "PE") v = vista(path.bounds({ type: "FeatureCollection", features: feats.filter(dentro) }), 1.08);
+  if (sel) { const vd = vista(path.bounds(sel), 2.2); vd[2] = Math.max(vd[2], v[2] / 3); v = vd; }
+  const v0 = MAPA.v || [220, 300, 600], i = d3.interpolateZoom(v0, v);
+  MAPA.v = v;
+  const k = 600 / v[2], mueve = v0.some((x, j) => Math.abs(x - v[j]) > 1e-6);
   const ps = g.selectAll("path.d").data(feats, f => f.properties.u).join("path").attr("class", "d")
-    .attr("d", path)
+    .each(function (f) { if (this.__f !== f) { this.__f = f; this.setAttribute("d", path(f)); } })  // solo los que cambian
     .attr("stroke", f => f === sel ? C.tinta : "#fff")
-    .attr("stroke-width", f => f === sel ? 2.5 : dentro(f) && s.area !== "PE" ? 0.8 : 0.3)
+    .attr("stroke-width", f => (f === sel ? 2.5 : dentro(f) && s.area !== "PE" ? 0.8 : 0.3) / k)
     .on("click", (e, f) => sel ? (f === sel ? null : verDistrito(null)) : dentro(f) ? verDistrito(f.properties.u) : subir())
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
@@ -475,18 +485,12 @@ function mapa(s) {
   // Capa de fondo con el contorno exterior de la zona: tapa las rendijas que deja la
   // simplificación entre distritos vecinos (se veían como ríos blancos al acercar).
   g.select("path.fondo").attr("d", path(MAPA.exterior(feats.filter(dentro)))).attr("fill", "#c9ccd0");
-  ps.transition().duration(DUR).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#d5d7da")
+  // Si la cámara se mueve, los colores cambian de una vez (animar ambos a la vez traba el zoom).
+  (mueve ? ps : ps.transition().duration(DUR)).attr("fill", f => dentro(f) ? color(r.get(f.properties.u)) : "#d5d7da")
     .style("opacity", f => !dentro(f) ? 0.3 : sel && f !== sel ? 0.45 : 1);
-  // Vista = [centro x, centro y, alto visible]; el mapa completo es [220, 300, 600].
-  const vista = (b, holgura) => { const [[x0, y0], [x1, y1]] = b;
-    return [(x0 + x1) / 2, (y0 + y1) / 2, Math.max(y1 - y0, (x1 - x0) * 600 / 440) * holgura]; };
-  let v = [220, 300, 600];
-  if (s.area !== "PE") v = vista(path.bounds({ type: "FeatureCollection", features: feats.filter(dentro) }), 1.08);
-  if (sel) { const vd = vista(path.bounds(sel), 2.2); vd[2] = Math.max(vd[2], v[2] / 3); v = vd; }
-  const v0 = MAPA.v || [220, 300, 600], i = d3.interpolateZoom(v0, v);
-  MAPA.v = v;
   const tr = v => { const k = 600 / v[2]; return `translate(${220 - k * v[0]},${300 - k * v[1]}) scale(${k})`; };
-  g.interrupt().transition().duration(DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0).ease(d3.easeCubicInOut)
+  // Solo se anima si la cámara cambia de lugar: así una descarga tardía no reinicia el zoom.
+  if (mueve) g.interrupt().transition().duration(DUR ? Math.min(850, Math.max(450, i.duration * 0.3)) : 0).ease(d3.easeCubicInOut)
     .attrTween("transform", () => t => tr(i(t)));
 }
 
