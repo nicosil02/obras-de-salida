@@ -48,6 +48,21 @@ def centroides():
     return cen.astype({"lon": float, "lat": float})
 
 
+# Tipos de obra: funcion del gasto en adquisicion de activos no financieros (inversion).
+TIPOS = {"TRANSPORTE": "tr", "SANEAMIENTO": "sa", "EDUCACION": "ed", "CULTURA Y DEPORTE": "cu",
+         "AGROPECUARIA": "ag", "VIVIENDA Y DESARROLLO URBANO": "vi", "ORDEN PUBLICO Y SEGURIDAD": "se", "SALUD": "sl"}
+
+
+def por_tipo(anios):
+    """Gasto de inversion por distrito, tipo y anio (millones). Antes de 2009 no hay generica."""
+    g = pd.concat(pd.read_parquet(PROC / "gasto" / f"gasto_municipal_{a}.parquet",
+                                  columns=["ANO_EJE", "UBIGEO", "FUNCION_NOMBRE", "GENERICA_NOMBRE", "DEVENGADO"])
+                  for a in anios)
+    g = g[(g["GENERICA_NOMBRE"] == "ADQUISICION DE ACTIVOS NO FINANCIEROS") & g["FUNCION_NOMBRE"].isin(TIPOS)]
+    g["UBIGEO"] = g["UBIGEO"].where(g["UBIGEO"].str[-2:] != "00", g["UBIGEO"].str[:4] + "01").replace(RECODIFICA)
+    return g.groupby(["UBIGEO", g["FUNCION_NOMBRE"].map(TIPOS), g["ANO_EJE"].astype(int)])["DEVENGADO"].sum() / 1e6
+
+
 # En 2014 se creo la provincia de Putumayo y el INEI recodifico dos distritos de Maynas.
 RECODIFICA = {"160109": "160801", "160114": "160803"}
 
@@ -68,6 +83,7 @@ def mapa3d(m, d, inv, cen):
     enero07 = set(u7.where(u7.str[-2:] != "00", u7.str[:4] + "01").replace(RECODIFICA))
     # Distritos creados despues del mapa del INEI: entran en los totales aunque no se dibujen.
     nom = pd.read_csv(ORIG / "DETALLE_INVERSIONES.csv", dtype=str, usecols=["UBIGEO", "PROVINCIA", "DISTRITO"])         .dropna().drop_duplicates("UBIGEO").set_index("UBIGEO")
+    tipo = por_tipo(anios)
     col = []
     for u in sorted(set(obras.index.get_level_values(0))):
         if u in cen.index:
@@ -78,7 +94,9 @@ def mapa3d(m, d, inv, cen):
             continue
         col.append({"u": u, "n": n, "x": x, "y": y,
                     "g": [round(float(gasto.get((u, a), 0)), 2) for a in anios],
-                    "o": [int(obras.get((u, a), 0)) for a in anios], "e7": int(u in enero07)})
+                    "o": [int(obras.get((u, a), 0)) for a in anios], "e7": int(u in enero07),
+                    "f": {t: [round(float(tipo.get((u, t, a), 0)), 2) for a in anios]
+                          for t in TIPOS.values() if (u, t) in tipo.index.droplevel(2)}})
     # Obras inconclusas abandonadas en cada cambio de alcalde, con sus coordenadas; las que
     # no tienen coordenadas van al centro de su distrito con un desplazamiento aleatorio.
     ab = d[d["transicion"] & d["abandonada"].astype(bool)].copy()

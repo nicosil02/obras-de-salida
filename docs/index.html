@@ -30,6 +30,7 @@
   .gestiones button { font: inherit; text-align: left; padding: 7px 10px; border: 1px solid #c9ccd0; border-radius: 6px;
                       background: var(--papel); color: var(--tinta); cursor: pointer; }
   .gestiones button:hover { border-color: var(--tinta-2); }
+  .gestiones button:disabled { opacity: .35; cursor: not-allowed; }
   .gestiones button.on { background: var(--tinta); border-color: var(--tinta); color: #fff; }
   .gestiones small { display: block; font-size: 12px; opacity: .75; }
   aside .nota { font-size: 12.5px; color: var(--tinta-3); line-height: 1.5; }
@@ -97,6 +98,21 @@
         <option value="2">Medianas</option>
         <option value="1">Pequeñas (el tercio que menos gasta)</option>
       </select></div>
+    <div class="ctrl"><label for="f-med">Qué medir</label>
+      <select id="f-med">
+        <option value="g">Gasto en obras (S/)</option>
+        <option value="o">Número de obras con pagos</option>
+        <optgroup label="Gasto por tipo de obra (desde 2009)">
+          <option value="tr">Transporte (pistas, caminos, puentes)</option>
+          <option value="sa">Agua y desagüe</option>
+          <option value="ed">Educación (colegios)</option>
+          <option value="cu">Cultura y deporte (estadios, losas)</option>
+          <option value="ag">Agro y riego</option>
+          <option value="vi">Vivienda y urbanismo (parques, veredas)</option>
+          <option value="se">Seguridad ciudadana</option>
+          <option value="sl">Salud (postas)</option>
+        </optgroup>
+      </select></div>
     <div class="ctrl"><span>Gestión municipal</span><div class="gestiones" id="f-ges"></div>
       <button class="play" id="play" type="button">▶ Recorrer las gestiones</button></div>
     <div class="chip" id="chip" hidden></div>
@@ -146,7 +162,7 @@
         </section>
         <section class="panel">
           <h2 id="t-rank"></h2>
-          <p class="sub">Distritos que gastaron al menos S/ 1 millón en obras en su primer año</p>
+          <p class="sub" id="s-rank"></p>
           <table><thead><tr><th>Distrito</th><th class="num" id="th1"></th><th class="num" id="th4"></th><th class="num">Cambio</th></tr></thead>
             <tbody id="rank"></tbody></table>
         </section>
@@ -170,11 +186,14 @@
         <li><b>El último año es el de más gasto.</b> En la gestión 2019-2022 las municipalidades pagaron S/ 12,616 millones en obras en su primer año y S/ 20,292 millones en el último (61% más). Pasa en las cuatro gestiones medidas.</li>
         <li><b>Pasa en 7 de cada 10 distritos.</b> El 70% gastó más en 2022 que en 2019.</li>
         <li><b>Al cambiar de alcalde, entre 28% y 32% de las obras a medias se queda sin pagos</b>, frente a 18% a 22% en años sin cambio.</li>
+        <li><b>Crecen más las obras que se ven.</b> En el último año el gasto en cultura y deporte (estadios, losas) se multiplica por 2.1, 2.1 y 2.9 en las gestiones 2011-2014, 2015-2018 y 2019-2022. El de agua y desagüe sube 60%, 20% y 10%. No es solo más plata: el número de obras con pagos también sube (+13%, +22% y +39%).</li>
         <li><b>Importa quién entra.</b> Si el nuevo alcalde es del mismo partido o fue regidor de la gestión que sale, se abandona entre 21% y 24% de las obras a medias. Si no tiene relación, 28.4%. Si vuelve un exalcalde rival, 32% (cambios de 2019 y 2023).</li>
       </ol></div>
       <div><h2>Cómo se calculó</h2><ul>
         <li>Pagos (devengado) mes a mes de cada obra de cada municipalidad, 2007-2026.</li>
         <li><b>Gasto del último año frente al primero.</b> Se compara el año de elecciones con el año en que entró el alcalde.</li>
+        <li><b>Número de obras.</b> Obras distintas que recibieron al menos un pago en el año.</li>
+        <li><b>Tipo de obra.</b> Gasto de inversión (adquisición de activos no financieros) según la función del clasificador del MEF, desde 2009.</li>
         <li><b>Obra a medias abandonada.</b> Obra con pagos en los 6 meses previos al 1 de enero, con menos de 80% de su costo pagado, que no recibe ningún pago en los 24 meses siguientes.</li>
         <li>Una regresión con efectos fijos de municipalidad, año y mes confirma el patrón (detalle en el repositorio).</li>
       </ul></div>
@@ -215,10 +234,17 @@ const fmt = n => Math.round(n).toLocaleString("es-PE");
 const C = { acento: "#c2410c", claro: "#f0a070", barra: "#b4b8bd", vacio: "#ececea", tinta: "#1f2328", tinta3: "#7d838a" };
 const Y0 = 2007, ANIOS = d3.range(Y0, 2027), GESTIONES = [2007, 2011, 2015, 2019];
 const esElec = y => (y - Y0) % 4 === 3;
-const gas = (c, y) => c.g[y - Y0];
+const gas = (c, y) => medida === "o" ? c.o[y - Y0] : medida === "g" ? c.g[y - Y0] : c.f[medida]?.[y - Y0] ?? 0;
+// Que se mide: gasto total, numero de obras o gasto de un tipo de obra.
+const tipo = () => medida !== "g" && medida !== "o";
+const nombreMed = () => medida === "o" ? "obras con pagos" : medida === "g" ? "gasto en obras"
+  : "gasto en " + $("f-med").selectedOptions[0].text.replace(/ \(.*/, "").toLowerCase();
+const fv = n => medida === "o" ? fmt(n) + " obras" : `S/ ${n < 10 ? n.toFixed(1) : fmt(n)} millones`;
+const verbo = (pl = true) => (medida === "o" ? (pl ? "tuvieron" : "tuvo") + " más obras con pagos"
+  : (pl ? "gastaron" : "gastó") + " más" + (tipo() ? " en " + nombreMed().slice(9) : ""));
 const cambio = r => r >= 2 ? `${r.toFixed(1)} veces` : `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1))}%`;
 const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
-let D, M, GEO, tercio, ini = 2019, distrito = null, timer = null;
+let D, M, GEO, tercio, medida = "g", ini = 2019, distrito = null, timer = null;
 
 const tip = $("tip");
 function verTip(e, html) { tip.style.display = "block"; tip.innerHTML = html;
@@ -235,7 +261,7 @@ function contar(id, v, f) {
 Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g]) => {
   D = d; M = m; GEO = g;
   // Tamano: tercios del gasto total en obras 2008-2025 de cada distrito.
-  const tot = M.columnas.map(c => d3.sum(d3.range(2008, 2026), y => gas(c, y)));
+  const tot = M.columnas.map(c => d3.sum(d3.range(2008, 2026), y => c.g[y - Y0]));
   const q = [d3.quantile(tot, 1 / 3), d3.quantile(tot, 2 / 3)];
   tercio = new Map(M.columnas.map((c, i) => [c.u, tot[i] <= q[0] ? "1" : tot[i] <= q[1] ? "2" : "3"]));
   $("f-dep").innerHTML = `<option value="PE">Todo el Perú</option>` +
@@ -245,11 +271,12 @@ Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).t
     .html(g => `${g}-${g + 3}<small>elecciones de ${g + 3}</small>`).on("click", (e, g) => { parar(); elegir(g); });
   $("f-dep").addEventListener("change", () => { distrito = null; actualizar(); });
   $("f-tam").addEventListener("change", actualizar);
+  $("f-med").addEventListener("change", () => { medida = $("f-med").value; elegir(ini); });
   $("play").addEventListener("click", () => timer ? parar() : recorrer());
   actualizar();
 });
 
-function elegir(g) { ini = g; actualizar(); }
+function elegir(g) { ini = tipo() && g === Y0 ? 2011 : g; actualizar(); }
 function parar() { clearInterval(timer); timer = null; $("play").textContent = "▶ Recorrer las gestiones"; }
 function recorrer() {
   $("play").textContent = "❚❚ Pausar";
@@ -275,7 +302,7 @@ function estado() {
 
 function actualizar() {
   const s = estado();
-  d3.select("#f-ges").selectAll("button").classed("on", g => g === ini);
+  d3.select("#f-ges").selectAll("button").classed("on", g => g === ini).property("disabled", g => tipo() && g === Y0);
   const f = s.sel && GEO.features.find(f => f.properties.u === distrito);
   $("chip").hidden = !s.sel;
   if (s.sel) {
@@ -288,9 +315,9 @@ function actualizar() {
 function kpis(s) {
   const mas = s.dist.filter(d => d.b > d.a).length, t = s.ab.find(x => x.anio === s.T), p = s.ab.find(x => x.anio === s.T - 2);
   contar("k1", s.ultimo / s.primero, cambio);
-  $("k1l").textContent = `gasto en obras en ${s.fin}, último año del alcalde, frente a ${ini}, su primer año (de S/ ${fmt(s.primero)} a ${fmt(s.ultimo)} millones)`;
+  $("k1l").textContent = `${nombreMed()} en ${s.fin}, último año del alcalde, frente a ${ini}, su primer año (de ${fv(s.primero)} a ${fv(s.ultimo)})`;
   contar("k2", 100 * mas / s.dist.length, v => Math.round(v) + "%");
-  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) gastó más en su último año que en el primero`;
+  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} en su último año que en el primero`;
   contar("k3", t && t.pct, v => Math.round(v) + "%");
   $("k3l").textContent = t ? `de las obras a medias se quedó sin pagos al entrar el nuevo alcalde en ${s.T}. En ${s.T - 2}, sin cambio, fue ${p ? Math.round(p.pct) : "s/d"}%.` : "";
   contar("k4", t && t.abandonadas, fmt);
@@ -299,10 +326,12 @@ function kpis(s) {
 
 function anual(s, f) {
   const fuente = s.sel ? [s.sel] : s.cols;
-  $("t-anual").textContent = s.sel ? `Gasto en obras de ${s.sel.n}, año por año`
-    : "Cada gestión termina con su año de más gasto en obras";
-  $("s-anual").textContent = s.sel ? "Millones de soles. Haz clic otra vez en el distrito para volver al total."
-    : "Gasto municipal en obras por año, en millones de soles. Haz clic en una barra para elegir esa gestión.";
+  const Nom = nombreMed()[0].toUpperCase() + nombreMed().slice(1), uni = medida === "o" ? "Número de obras" : "Millones de soles";
+  $("t-anual").textContent = s.sel ? `${Nom} de ${s.sel.n}, año por año`
+    : medida === "g" ? "Cada gestión termina con su año de más gasto en obras" : `${Nom}, año por año`;
+  $("s-anual").textContent = s.sel ? `${uni}. Haz clic otra vez en el distrito para volver al total.`
+    : `${uni} por año.` + (medida === "o" ? " Cuenta cada obra que recibió algún pago en el año." : "")
+      + (tipo() ? " Gasto de inversión en esa función; no hay datos antes de 2009." : "") + " Haz clic en una barra para elegir esa gestión.";
   const v = ANIOS.map(y => ({ y, g: d3.sum(fuente, c => gas(c, y)) }));
   const W = 1000, H = 300, m = { t: 40, r: 10, b: 50, l: 56 };
   const x = d3.scaleBand().domain(ANIOS).range([m.l, W - m.r]).paddingInner(0.25).paddingOuter(0.1);
@@ -326,7 +355,7 @@ function anual(s, f) {
       .attr("fill", d => esElec(d.y) ? C.acento : C.barra))
     .style("cursor", d => d.y < 2023 ? "pointer" : null)
     .on("click", (e, d) => { if (d.y < 2023) { parar(); elegir(Y0 + 4 * Math.floor((d.y - Y0) / 4)); } })
-    .on("mousemove", (e, d) => verTip(e, `<b>${d.y}</b><br>S/ ${d.g < 10 ? d.g.toFixed(1) : fmt(d.g)} millones en obras` +
+    .on("mousemove", (e, d) => verTip(e, `<b>${d.y}</b><br>${fv(d.g)}` +
       (d.y === Y0 ? "<br>Año incompleto" : d.y === 2026 ? "<br>Hasta septiembre" : "")))
     .on("mouseleave", ocultarTip)
     .transition().duration(DUR)
@@ -353,7 +382,7 @@ function anual(s, f) {
 }
 
 function mapa(s) {
-  $("t-mapa").textContent = `¿Qué distritos gastaron más en ${s.fin} que en ${ini}?`;
+  $("t-mapa").textContent = `¿Qué distritos ${verbo()} en ${s.fin} que en ${ini}?`;
   const r = new Map(s.dist.map(d => [d.c.u, d]));
   const feats = GEO.features.filter(f => s.dep === "PE" || f.properties.u.slice(0, 2) === s.dep);
   const proj = d3.geoMercator().fitExtent([[6, 6], [434, 594]], { type: "FeatureCollection", features: feats });
@@ -365,7 +394,7 @@ function mapa(s) {
     .on("click", (e, f) => verDistrito(f.properties.u))
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
-        ? `${ini}: S/ ${d.a.toFixed(1)} millones<br>${s.fin}: S/ ${d.b.toFixed(1)} millones` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
+        ? `${ini}: ${fv(d.a)}<br>${s.fin}: ${fv(d.b)}` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
         : "Sin datos para este filtro") + "<br><i>Clic para ver su gasto año por año</i>"); })
     .on("mouseleave", ocultarTip);
   ps.filter(f => f.properties.u === distrito).raise();
@@ -417,11 +446,14 @@ function relac() {
 }
 
 function ranking(s) {
-  const top = s.dist.filter(d => d.a >= 1).sort((p, q) => q.b / q.a - p.b / p.a).slice(0, 8);
-  $("t-rank").textContent = `Donde más creció el gasto en el último año (${s.zona})`;
-  $("th1").textContent = `${ini} (S/ mill.)`; $("th4").textContent = `${s.fin} (S/ mill.)`;
+  const o = medida === "o", min = o ? 10 : tipo() ? 0.3 : 1, n = v => o ? fmt(v) : v.toFixed(1);
+  const top = s.dist.filter(d => d.a >= min).sort((p, q) => q.b / q.a - p.b / p.a).slice(0, 8);
+  $("t-rank").textContent = `Donde más creció el ${o ? "número de obras" : nombreMed()} en el último año (${s.zona})`;
+  $("s-rank").textContent = o ? "Distritos con al menos 10 obras con pagos en su primer año"
+    : `Distritos con al menos S/ ${min === 1 ? "1 millón" : "300 mil"} de ${nombreMed()} en su primer año`;
+  $("th1").textContent = `${ini} (${o ? "obras" : "S/ mill."})`; $("th4").textContent = `${s.fin} (${o ? "obras" : "S/ mill."})`;
   d3.select("#rank").selectAll("tr").data(top.length ? top : [null]).join("tr")
-    .html(d => d ? `<td>${d.c.n}</td><td class="num">${d.a.toFixed(1)}</td><td class="num">${d.b.toFixed(1)}</td>` +
+    .html(d => d ? `<td>${d.c.n}</td><td class="num">${n(d.a)}</td><td class="num">${n(d.b)}</td>` +
       `<td class="num"><b>${cambio(d.b / d.a)}</b></td>` : `<td colspan="4">No hay distritos con ese tamaño de gasto en este filtro.</td>`)
     .style("cursor", d => d ? "pointer" : null).on("click", (e, d) => d && verDistrito(d.c.u))
     .style("opacity", 0).transition().duration(DUR).delay((d, i) => i * 40).style("opacity", 1);
