@@ -49,6 +49,13 @@
   .panel .sub { margin: 3px 0 10px; font-size: 13px; color: var(--tinta-3); }
   .apilado { display: grid; gap: 16px; align-content: start; }
   svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .elecs { display: grid; grid-template-columns: repeat(2, 1fr) 2px repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  .elecs button { font: inherit; text-align: left; padding: 8px 12px; border: 1px solid #e4e4e1; border-radius: 6px; background: var(--papel); cursor: pointer; color: var(--tinta); }
+  .elecs button.on { border-color: var(--tinta); }
+  .elecs b { display: block; font-size: 20px; }
+  .elecs small { display: block; font-size: 12px; color: var(--tinta-3); }
+  .elecs .corte { background: var(--tinta); position: relative; }
+  .elecs .corte span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 600; }
   .ley { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--tinta-2); margin-top: 8px; }
   .ley i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
@@ -138,6 +145,8 @@
       <h2 id="t-ciclo"></h2>
       <p class="sub" id="s-ciclo"></p>
       <svg id="ciclo" viewBox="0 0 1000 290" role="img" aria-label="Gasto mensual en obras en el año de elecciones frente al año anterior"></svg>
+      <p class="sub" style="margin:16px 0 22px">Tras la elección (octubre a diciembre) frente a los mismos meses del año anterior, en cada elección. Haz clic para verla.</p>
+      <div class="elecs" id="elecs"></div>
       <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones</span>
         <span><i style="background:var(--barra)"></i>Año anterior</span>
         <span>Las elecciones municipales son a inicios de octubre y el nuevo alcalde entra el 1 de enero.</span></div>
@@ -391,6 +400,15 @@ function ciclo(s) {
   const V = [["Campaña", [6, 7, 8, 9]], ["Tras la elección", [10, 11, 12]]]
     .map(([l, ms]) => ({ l, ms, r: suma(s.pre, ms) > 0 ? suma(s.fin, ms) / suma(s.pre, ms) : null }));
   const R = D.regresion["indice_gasto|sin_reeleccion|eleccion"], pc = v => Math.round(Math.abs(v.pct)) + "%";
+  // Las cuatro elecciones: el salto tras la elección aparece desde que se prohibió la reelección.
+  const E = GESTIONES.map(g => { const f = g + 3, a = suma(f - 1, [10, 11, 12]); return { g, f, r: a > 0 ? suma(f, [10, 11, 12]) / a : null }; });
+  d3.select("#elecs").selectAll("*").remove();
+  E.forEach((e, i) => {
+    if (i === 2) d3.select("#elecs").append("div").attr("class", "corte").html("<span>2015: se prohíbe la reelección</span>");
+    d3.select("#elecs").append("button").attr("type", "button").classed("on", e.g === ini).on("click", () => { parar(); elegir(e.g); })
+      .html(`<small>Elecciones de ${e.f}</small><b style="color:${e.r > 1.1 ? C.acento : C.tinta}">${e.r == null ? "s/d" : cambio(e.r)}</b>` +
+        `<small>${e.f <= 2014 ? "El alcalde podía reelegirse" : "El alcalde ya no puede reelegirse"}</small>`);
+  });
   $("t-ciclo").textContent = o ? "Cuando ya se van, pagan más obras" : "Gastan más cuando ya se van";
   $("s-ciclo").textContent = `${o ? "Obras con pagos" : "Millones de soles de 2022"} por mes, ${s.zona}` +
     (tipo() ? ", gasto total en obras (no hay datos mensuales por tipo)" : "") + `. Con controles por municipalidad, año y mes, ` +
