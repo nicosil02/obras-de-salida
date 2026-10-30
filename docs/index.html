@@ -159,7 +159,7 @@
       <svg id="anual" viewBox="0 0 1000 300" role="img" aria-label="Gasto municipal en obras por año, 2007 a 2026"></svg>
       <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones (último año del alcalde)</span>
         <span><i style="background:var(--barra)"></i>Otros años</span>
-        <span>2007 incompleto (no todas las municipalidades reportaban). 2026 hasta septiembre.</span></div>
+        <span>2007 incompleto (no todas las municipalidades reportaban). 2020, caída por la cuarentena de la pandemia. 2026 hasta septiembre.</span></div>
     </section>
 
     <div class="fila f-mapa">
@@ -462,7 +462,7 @@ function anual(s, f) {
   const fuente = s.sel ? [s.sel] : s.cols;
   const Nom = nombreMed()[0].toUpperCase() + nombreMed().slice(1), uni = medida === "o" ? "Número de obras" : "Millones de soles de 2022";
   $("t-anual").textContent = s.sel ? `${Nom} de ${s.sel.n}, año por año`
-    : medida === "g" ? "Cada alcalde empieza lento y acelera hacia el final" : `${Nom}, año por año`;
+    : medida === "g" ? "El gasto en obras cae cada vez que entra un nuevo alcalde" : `${Nom}, año por año`;
   $("s-anual").textContent = s.sel ? `${uni}. Haz clic otra vez en el distrito para volver al total.`
     : `${uni} por año.` + (medida === "o" ? " Cuenta cada obra que recibió algún pago en el año." : "")
       + (tipo() ? " Gasto de inversión en esa función; no hay datos antes de 2009." : "") + " Haz clic en una barra para elegir esa gestión.";
@@ -490,7 +490,7 @@ function anual(s, f) {
     .style("cursor", d => d.y < 2023 ? "pointer" : null)
     .on("click", (e, d) => { if (d.y < 2023) { parar(); elegir(Y0 + 4 * Math.floor((d.y - Y0) / 4)); } })
     .on("mousemove", (e, d) => verTip(e, `<b>${d.y}</b><br>${fv(d.g)}` +
-      (d.y === Y0 ? "<br>Año incompleto" : d.y === 2026 ? "<br>Hasta septiembre" : "")))
+      (d.y === Y0 ? "<br>Año incompleto" : d.y === 2026 ? "<br>Hasta septiembre" : d.y === 2020 ? "<br>Cuarentena por la pandemia" : "")))
     .on("mouseleave", ocultarTip)
     .transition().duration(DUR)
     .attr("y", d => y(d.g)).attr("height", d => y(0) - y(d.g))
@@ -500,6 +500,10 @@ function anual(s, f) {
   [2007, 2011, 2015, 2019, 2023].forEach(g => an.append("text").attr("x", x(g) + ancho4 / 2)
     .attr("y", H - m.b + 36).attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", g === ini ? 700 : 400)
     .attr("fill", g === ini ? C.tinta : C.tinta3).text(`Gestión ${g}-${g + 3}${g === 2023 ? " (en curso)" : ""}`));
+  // 2020: la cuarentena frenó las obras; se marca para no leerla como parte del ciclo.
+  const p20 = v.find(d => d.y === 2020);
+  an.append("text").attr("x", x(2020) + x.bandwidth() / 2).attr("y", y(p20.g) - 6).attr("text-anchor", "middle")
+    .attr("font-size", 11.5).attr("fill", C.tinta3).text("Pandemia");
   const a = v.find(d => d.y === ini + 2), b = v.find(d => d.y === ini + 3), r = a.g > 0 ? b.g / a.g : null;
   const nota = an.append("g").attr("opacity", 0);
   const fm = n => n < 10 ? n.toFixed(1) : fmt(n);
