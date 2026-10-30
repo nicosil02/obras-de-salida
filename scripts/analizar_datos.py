@@ -167,10 +167,12 @@ def ejecucion():
             base = sub.loc[sub["anio_gestion"] == 1, y].mean()
             pct = lambda b: 100 * b / base
             res[f"{y}|{etapa}|anio_gestion"] = {
-                k: {"pct": pct(r.params[k]), "p": r.pvalues[k]} for k in ["anio_2", "anio_3", "anio_4"]}
+                k: {"pct": pct(r.params[k]), "ic": 1.96 * pct(r.std_errors[k]), "p": r.pvalues[k]}
+                for k in ["anio_2", "anio_3", "anio_4"]}
             # Prueba 2: dentro del anio (efectos fijos de anio).
             e = estimar(sub, y, ["campana", "cola", "inicio"], ent="SEC_EJEC")
-            res[f"{y}|{etapa}|eleccion"] = {k: {"pct": e[k]["pct"], "p": e[k]["p"]}
+            res[f"{y}|{etapa}|eleccion"] = {k: {"pct": e[k]["pct"], "p": e[k]["p"],
+                                                "ic": 1.96 * 100 * e[k]["ee"] / e["media_base"]}
                                             for k in ["campana", "cola", "inicio"]}
     for k, v in res.items():
         print(k, {c: f"{d['pct']:+.1f}% (p={d['p']:.3f})" for c, d in v.items()}, flush=True)
