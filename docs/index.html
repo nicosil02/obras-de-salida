@@ -25,7 +25,7 @@
   aside { position: sticky; top: 0; padding: 22px 22px 30px; border-right: 1px solid var(--linea); min-height: calc(100vh - 1px); }
   .ctrl { margin-bottom: 22px; }
   .ctrl > label, .ctrl > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-  select { width: 100%; font: inherit; padding: 7px 9px; border: 1px solid #c9ccd0; border-radius: 6px; background: var(--papel); color: var(--tinta); }
+  select, input { width: 100%; font: inherit; padding: 7px 9px; border: 1px solid #c9ccd0; border-radius: 6px; background: var(--papel); color: var(--tinta); }
   .gestiones { display: grid; gap: 6px; }
   .gestiones button { font: inherit; text-align: left; padding: 7px 10px; border: 1px solid #c9ccd0; border-radius: 6px;
                       background: var(--papel); color: var(--tinta); cursor: pointer; }
@@ -90,7 +90,10 @@
 
 <div class="app">
   <aside>
+    <div class="ctrl"><label for="f-buscar">Busca tu distrito</label>
+      <input id="f-buscar" list="l-dist" placeholder="Escribe su nombre" autocomplete="off"><datalist id="l-dist"></datalist></div>
     <div class="ctrl"><label for="f-dep">Departamento</label><select id="f-dep"></select></div>
+    <div class="ctrl"><label for="f-prov">Provincia</label><select id="f-prov" disabled></select></div>
     <div class="ctrl"><label for="f-tam">Tamaño de la municipalidad</label>
       <select id="f-tam">
         <option value="todos">Todas</option>
@@ -269,7 +272,18 @@ Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).t
   $("paral").textContent = fmt(D.paralizadas);
   d3.select("#f-ges").selectAll("button").data(GESTIONES).join("button").attr("type", "button")
     .html(g => `${g}-${g + 3}<small>elecciones de ${g + 3}</small>`).on("click", (e, g) => { parar(); elegir(g); });
-  $("f-dep").addEventListener("change", () => { distrito = null; actualizar(); });
+  // Buscador: "Distrito (Provincia), Departamento" -> ubigeo.
+  const nombres = new Map(M.columnas.map(c => [`${c.n}, ${D.departamentos[c.u.slice(0, 2)]}`, c.u]));
+  $("l-dist").innerHTML = [...nombres.keys()].sort().map(n => `<option value="${n}">`).join("");
+  $("f-buscar").addEventListener("change", e => {
+    const u = nombres.get(e.target.value); if (!u) return;
+    $("f-dep").value = u.slice(0, 2); provincias(); $("f-prov").value = u.slice(0, 4);
+    distrito = u; e.target.value = ""; actualizar();
+    $("anual").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  provincias();
+  $("f-dep").addEventListener("change", () => { distrito = null; provincias(); actualizar(); });
+  $("f-prov").addEventListener("change", () => { distrito = null; actualizar(); });
   $("f-tam").addEventListener("change", actualizar);
   $("f-med").addEventListener("change", () => { medida = $("f-med").value; elegir(ini); });
   $("play").addEventListener("click", () => timer ? parar() : recorrer());
@@ -287,17 +301,24 @@ function recorrer() {
     elegir(GESTIONES[i + 1]);
   }, 2800);
 }
+function provincias() {
+  const dep = $("f-dep").value;
+  $("f-prov").disabled = dep === "PE";
+  $("f-prov").innerHTML = `<option value="">Todas las provincias</option>` + Object.entries(D.provincias)
+    .filter(([k]) => k.slice(0, 2) === dep).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+}
 function verDistrito(u) { distrito = distrito === u ? null : u; actualizar(); }
 
 function estado() {
-  const dep = $("f-dep").value, tam = $("f-tam").value;
-  const cols = M.columnas.filter(c => (dep === "PE" || c.u.slice(0, 2) === dep) && (tam === "todos" || tercio.get(c.u) === tam));
+  const dep = $("f-dep").value, tam = $("f-tam").value, area = $("f-prov").value || dep;
+  const cols = M.columnas.filter(c => (area === "PE" || c.u.startsWith(area)) && (tam === "todos" || tercio.get(c.u) === tam));
   // 2007 solo cuenta para las municipalidades que ya reportaban en enero.
   const comp = ini === Y0 ? cols.filter(c => c.e7) : cols;
   const fin = ini + 3, primero = d3.sum(comp, c => gas(c, ini)), ultimo = d3.sum(comp, c => gas(c, fin));
   const dist = comp.filter(c => gas(c, ini) + gas(c, fin) > 0.05).map(c => ({ c, a: gas(c, ini), b: gas(c, fin) }));
-  return { dep, tam, cols, fin, primero, ultimo, dist, zona: dep === "PE" ? "Perú" : D.departamentos[dep],
-           T: ini + 4, ab: D.abandono.filter(x => x.dep === dep), sel: distrito && M.columnas.find(c => c.u === distrito) };
+  return { dep, area, tam, cols, fin, primero, ultimo, dist,
+           zona: area === "PE" ? "Perú" : area.length === 4 ? `provincia de ${D.provincias[area]}` : D.departamentos[dep],
+           T: ini + 4, ab: D.abandono.filter(x => x.dep === area), sel: distrito && M.columnas.find(c => c.u === distrito) };
 }
 
 function actualizar() {
@@ -314,10 +335,12 @@ function actualizar() {
 
 function kpis(s) {
   const mas = s.dist.filter(d => d.b > d.a).length, t = s.ab.find(x => x.anio === s.T), p = s.ab.find(x => x.anio === s.T - 2);
-  contar("k1", s.ultimo / s.primero, cambio);
-  $("k1l").textContent = `${nombreMed()} en ${s.fin}, último año del alcalde, frente a ${ini}, su primer año (de ${fv(s.primero)} a ${fv(s.ultimo)})`;
+  // Con un distrito elegido, el primer indicador es el de ese distrito.
+  const [a, b] = s.sel ? [gas(s.sel, ini), gas(s.sel, s.fin)] : [s.primero, s.ultimo];
+  contar("k1", a > 0 ? b / a : null, cambio);
+  $("k1l").textContent = `${nombreMed()}${s.sel ? " de " + s.sel.n : ""} en ${s.fin}, último año del alcalde, frente a ${ini}, su primer año (de ${fv(a)} a ${fv(b)})`;
   contar("k2", 100 * mas / s.dist.length, v => Math.round(v) + "%");
-  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} en su último año que en el primero`;
+  $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) ${verbo(false)} en su último año que en el primero (${s.zona})`;
   contar("k3", t && t.pct, v => Math.round(v) + "%");
   $("k3l").textContent = t ? `de las obras a medias se quedó sin pagos al entrar el nuevo alcalde en ${s.T}. En ${s.T - 2}, sin cambio, fue ${p ? Math.round(p.pct) : "s/d"}%.` : "";
   contar("k4", t && t.abandonadas, fmt);
@@ -384,13 +407,13 @@ function anual(s, f) {
 function mapa(s) {
   $("t-mapa").textContent = `¿Qué distritos ${verbo()} en ${s.fin} que en ${ini}?`;
   const r = new Map(s.dist.map(d => [d.c.u, d]));
-  const feats = GEO.features.filter(f => s.dep === "PE" || f.properties.u.slice(0, 2) === s.dep);
+  const feats = GEO.features.filter(f => s.area === "PE" || f.properties.u.startsWith(s.area));
   const proj = d3.geoMercator().fitExtent([[6, 6], [434, 594]], { type: "FeatureCollection", features: feats });
   const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
   const ps = d3.select("#mapa").selectAll("path").data(feats, f => f.properties.u).join("path")
     .attr("d", d3.geoPath(proj))
     .attr("stroke", f => f.properties.u === distrito ? C.tinta : "#fff")
-    .attr("stroke-width", f => f.properties.u === distrito ? 2 : s.dep === "PE" ? 0.2 : 0.5)
+    .attr("stroke-width", f => f.properties.u === distrito ? 2 : s.area === "PE" ? 0.2 : 0.5)
     .on("click", (e, f) => verDistrito(f.properties.u))
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d

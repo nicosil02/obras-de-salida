@@ -1,0 +1,62 @@
+{
+  "titulo": "Obras de salida",
+  "fuente": "reel/informe.md (MEF, ONPE, JNE)",
+  "escenas": [
+    {
+      "frase": "Calles cerradas. Pistas levantadas. Veredas nuevas. Cada cuatro años, justo antes de las elecciones, pasa lo mismo.",
+      "subtitulo": "Calles cerradas. Pistas levantadas. Veredas nuevas. Cada cuatro años, justo antes de las elecciones, pasa lo mismo.",
+      "cifra": "",
+      "etiqueta": "",
+      "imagen": "cortes rápidos de obras reales en calles",
+      "credito": "por definir"
+    },
+    {
+      "frase": "Crucé veinte años de gasto en obras de todas las municipalidades del Perú con cada elección municipal. En su último año, los alcaldes gastan sesenta y uno por ciento más en obras que en el primero.",
+      "subtitulo": "Crucé 20 años de gasto en obras de todas las municipalidades del Perú con cada elección municipal. En su último año, los alcaldes gastan 61% más en obras que en el primero.",
+      "cifra": "+61%",
+      "etiqueta": "Gasto en obras, 2022 frente a 2019",
+      "imagen": "gráfico anual 2007-2026 con los años de elecciones en naranja",
+      "credito": "MEF, gasto devengado 2007-2026; ONPE y JNE, elecciones 2006-2022"
+    },
+    {
+      "frase": "¿Y a dónde va ese gasto? Sobre todo, a lo que se ve.",
+      "subtitulo": "¿Y a dónde va ese gasto? Sobre todo, a lo que se ve.",
+      "cifra": "",
+      "etiqueta": "",
+      "imagen": "estadio o losa recién inaugurada; corte a una pista nueva",
+      "credito": "por definir"
+    },
+    {
+      "frase": "En la última gestión, el gasto en estadios y losas casi se triplicó. El de agua y desagüe, que va bajo tierra, subió apenas diez por ciento.",
+      "subtitulo": "En la última gestión, el gasto en estadios y losas casi se triplicó. El de agua y desagüe, que va bajo tierra, subió apenas 10%.",
+      "cifra": "2.9 veces",
+      "etiqueta": "Cultura y deporte, 2022 frente a 2019 (agua y desagüe +10%)",
+      "imagen": "dos barras que crecen, estadios y losas frente a agua y desagüe",
+      "credito": "MEF, gasto por función"
+    },
+    {
+      "frase": "Pero el primero de enero llega un nuevo alcalde, y tres de cada diez obras a medias dejan de recibir pagos. Como esta red de desagüe en Lurigancho, detenida en el cuarenta y cuatro por ciento.",
+      "subtitulo": "Pero el 1 de enero llega un nuevo alcalde, y 3 de cada 10 obras a medias dejan de recibir pagos. Como esta red de desagüe en Lurigancho, detenida en el 44%.",
+      "cifra": "28%",
+      "etiqueta": "Obras a medias sin pagos tras el cambio de 2023 (18% sin cambio)",
+      "imagen": "mapa que se acerca a Lurigancho y barra de avance detenida en 44%",
+      "credito": "MEF, pagos por obra y banco de inversiones"
+    },
+    {
+      "frase": "Y depende de quién llegue. Si vuelve un exalcalde rival, se abandona aún más, el treinta y dos por ciento.",
+      "subtitulo": "Y depende de quién llegue. Si vuelve un exalcalde rival, se abandona aún más, el 32%.",
+      "cifra": "32%",
+      "etiqueta": "Si vuelve un exalcalde rival (24% si continúa el mismo partido)",
+      "imagen": "gráfico Importa quién entra",
+      "credito": "JNE, autoridades electas; ONPE"
+    },
+    {
+      "frase": "La próxima vez que veas tu calle en obras, pregúntate quién la va a terminar. Busca tu distrito en el tablero. El enlace está en la publicación.",
+      "subtitulo": "La próxima vez que veas tu calle en obras, pregúntate quién la va a terminar. Busca tu distrito en el tablero. El enlace está en la publicación.",
+      "cifra": "",
+      "etiqueta": "nicosil02.github.io/obras-de-salida",
+      "imagen": "dashboard con clic en un distrito; texto chico: una obra sin pagos no siempre es una obra abandonada",
+      "credito": "MEF · ONPE · JNE"
+    }
+  ]
+}

@@ -1,2 +1,4 @@
 datos/originales/
 *.log
+reel/mi_voz.*
+reel/salidas/*.wav

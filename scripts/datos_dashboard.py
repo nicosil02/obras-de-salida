@@ -196,9 +196,9 @@ def ejemplos(p, inv, cen):
 def main():
     p = A.pagos()
     d = inconclusas(p)
-    # Abandono por departamento ("PE" = todo el pais) y por anio (transiciones y placebos).
+    # Abandono por departamento y provincia ("PE" = todo el pais) y por anio (transiciones y placebos).
     abandono = []
-    for dep, g in [("PE", d)] + list(d.groupby("dep")):
+    for dep, g in [("PE", d)] + list(d.groupby("dep")) + list(d.groupby(d["UBIGEO"].str[:4])):
         for anio, h in g.groupby("anio"):
             abandono.append({"dep": dep, "anio": int(anio), "transicion": anio in A.TRANSICIONES,
                              "n": len(h), "abandonadas": int(h["abandonada"].sum()),
@@ -222,10 +222,12 @@ def main():
 
     geo = json.loads((ORIG / "distritos_inei.geojson").read_text(encoding="utf-8"))
     deps = {f["properties"]["IDDPTO"]: f["properties"]["NOMBDEP"].title() for f in geo["features"]}
+    provs = {f["properties"]["IDPROV"]: f["properties"]["NOMBPROV"].title() for f in geo["features"]}
     datos = {
         "meses": [f"{t // 12}-{t % 12 + 1:02d}" for t in meses],
         "serie": serie,
         "departamentos": dict(sorted(deps.items(), key=lambda x: x[1])),
+        "provincias": dict(sorted(provs.items(), key=lambda x: x[1])),
         "abandono": abandono,
         "partido": cambio_partido(d),
         "relaciones": relaciones(d),

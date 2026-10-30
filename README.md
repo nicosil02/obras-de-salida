@@ -12,7 +12,7 @@ En su último año, los alcaldes gastan 61% más en obras que en su primero. Cua
 
 El proyecto sigue mes a mes los pagos de cada obra de las casi 1,900 municipalidades del Perú entre 2007 y 2026. Compara el último año de cada gestión municipal (el año de elecciones) con el primero y mide cuántas obras que estaban a medias dejan de recibir pagos cuando cambia el alcalde.
 
-El dashboard permite elegir departamento, tamaño de la municipalidad, gestión y qué medir (gasto, número de obras o gasto por tipo de obra). Tiene un mapa por distrito, el gasto año por año, el abandono de obras en cada cambio de alcalde y el abandono según quién entra.
+El dashboard permite buscar un distrito y elegir departamento, provincia, tamaño de la municipalidad, gestión y qué medir (gasto, número de obras o gasto por tipo de obra). Tiene un mapa por distrito, el gasto año por año, el abandono de obras en cada cambio de alcalde y el abandono según quién entra.
 
 ## Fuentes
 
