@@ -2,10 +2,11 @@
 
 - DETALLE_INVERSIONES.csv: cada inversion publica con ubicacion (lat/lon) y fechas.
 - {anio}-Gasto*.csv: gasto de todo el Estado (3-10 GB por anio). Se descarga a una
-  carpeta temporal y se agrega a municipalidad x mes x rubro x funcion.
+  carpeta temporal y se agrega a municipalidad x mes x rubro x funcion, y a pagos por obra.
+- {anio}-Transferencias.csv y {anio}-Ingreso.csv: transferencias e ingresos por municipalidad.
 
 Uso: python scripts/obtener_datos.py inversiones
-     python scripts/obtener_datos.py gasto <carpeta_temporal> 2022 2023 ...
+     python scripts/obtener_datos.py gasto|transferencias|ingreso <carpeta_temporal> 2022 ...
 """
 import subprocess
 import sys
@@ -34,10 +35,8 @@ def inversiones():
         print(f"{nombre}: {len(df):,} filas ({date.today()})")
 
 
-def gasto(anio, carpeta):
-    # Los anios cerrados vienen en formato mensual (MES_EJE); 2025 y 2026, en formato
-    # "Devengado-Diario" con una columna por mes.
-    nombre = f"{anio}-Gasto.csv" if anio < 2025 else f"{anio}-Gasto-Devengado-Diario.csv"
+def descargar(nombre, carpeta):
+    """Descarga un archivo del MEF completo y sin lineas rotas; devuelve su ruta."""
     csv = Path(carpeta) / nombre
     # El servidor corta las conexiones largas y a veces curl da por terminado un archivo
     # incompleto: se retoma (-C -) hasta que el tamano coincide con el del servidor.
@@ -61,9 +60,52 @@ def gasto(anio, carpeta):
                 malas += 1
             else:
                 sal.write(linea)
-    print(f"{anio}: {malas} lineas con comillas mal cerradas descartadas", flush=True)
+    print(f"{nombre}: {malas} lineas con comillas mal cerradas descartadas", flush=True)
     csv.unlink()
-    csv = limpio
+    return limpio
+
+
+def ubigeo(ch):
+    return ch["DEPARTAMENTO_EJECUTORA"] + ch["PROVINCIA_EJECUTORA"] + ch["DISTRITO_EJECUTORA"]
+
+
+def transferencias(anio, carpeta):
+    # Plata que el gobierno nacional transfiere a cada municipalidad (canon, FONCOMUN,
+    # regalias...), por mes. Existe desde 2004, antes de que los municipios entren al SIAF.
+    csv = descargar(f"{anio}-Transferencias.csv", carpeta)
+    df = pd.read_csv(csv, dtype=str, encoding="utf-8-sig")
+    df = df[df["TIPO_ENTIDAD"] == "M"].copy()
+    df["UBIGEO"] = ubigeo(df)
+    df["MONTO"] = df["MONTO_ACREDITADO"].astype(float)
+    df = df.groupby(["ANO_PRC", "MES_PRC", "SEC_EJEC", "UBIGEO", "RUBRO_NOMBRE",
+                     "RECURSO_NOMBRE"], as_index=False)["MONTO"].sum()
+    PROC.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(PROC / f"transferencias_{anio}.parquet", index=False)
+    print(f"{anio}: transferencias, {df['SEC_EJEC'].nunique():,} municipalidades")
+
+
+def ingreso(anio, carpeta):
+    # Ingresos recaudados por cada municipalidad (impuestos propios, transferencias...).
+    csv = descargar(f"{anio}-Ingreso.csv", carpeta)
+    partes = []
+    for ch in pd.read_csv(csv, dtype=str, chunksize=500_000, encoding="utf-8-sig"):
+        ch = ch[ch["NIVEL_GOBIERNO"] == "M"].copy()
+        ch["UBIGEO"] = ubigeo(ch)
+        ch["RECAUDADO"] = ch["MONTO_RECAUDADO"].astype(float)
+        partes.append(ch.groupby(["ANO_DOC", "MES_DOC", "SEC_EJEC", "UBIGEO", "RUBRO_NOMBRE",
+                                  "TIPO_INGRESO_NOMBRE"], as_index=False)["RECAUDADO"].sum())
+    df = pd.concat(partes).groupby(["ANO_DOC", "MES_DOC", "SEC_EJEC", "UBIGEO", "RUBRO_NOMBRE",
+                                    "TIPO_INGRESO_NOMBRE"], as_index=False)["RECAUDADO"].sum()
+    PROC.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(PROC / f"ingreso_{anio}.parquet", index=False)
+    print(f"{anio}: ingreso, {df['SEC_EJEC'].nunique():,} municipalidades")
+
+
+def gasto(anio, carpeta):
+    # Los anios cerrados vienen en formato mensual (MES_EJE); 2025 y 2026, en formato
+    # "Devengado-Diario" con una columna por mes.
+    nombre = f"{anio}-Gasto.csv" if anio < 2025 else f"{anio}-Gasto-Devengado-Diario.csv"
+    csv = descargar(nombre, carpeta)
     partes, obras = [], []
     lector = pd.read_csv(csv, dtype=str, chunksize=500_000, encoding="utf-8-sig")
     for i, ch in enumerate(lector):
@@ -73,8 +115,7 @@ def gasto(anio, carpeta):
         for c in CLAVES:
             if c not in ch and c != "UBIGEO":
                 ch[c] = ""
-        ch["UBIGEO"] = (ch["DEPARTAMENTO_EJECUTORA"] + ch["PROVINCIA_EJECUTORA"]
-                        + ch["DISTRITO_EJECUTORA"])
+        ch["UBIGEO"] = ubigeo(ch)
         # Codigo de inversion solo en filas de proyectos (en actividades queda vacio).
         ch["PROYECTO"] = ch["PRODUCTO_PROYECTO"].where(
             ch["TIPO_ACT_PROY"].isin(["2", "PROYECTO"]), "")
@@ -112,5 +153,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "inversiones":
         inversiones()
     else:
+        fuente = {"gasto": gasto, "transferencias": transferencias, "ingreso": ingreso}
         for a in sys.argv[3:]:
-            gasto(int(a), sys.argv[2])
+            fuente[sys.argv[1]](int(a), sys.argv[2])
