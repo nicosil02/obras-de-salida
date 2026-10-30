@@ -101,7 +101,7 @@
       <button class="play" id="play" type="button">▶ Recorrer las gestiones</button></div>
     <div class="chip" id="chip" hidden></div>
     <p class="nota">Cada gestión dura 4 años. El primer año entra el alcalde y el último hay elecciones.</p>
-    <p class="nota">Datos del MEF, la Contraloría, ONPE e Infogob.<br>
+    <p class="nota">Datos del MEF, el JNE (Infogob), la ONPE y la Contraloría.<br>
       <a href="#metodo">Cómo se calculó</a><br><a href="https://github.com/nicosil02/obras-de-salida">Código y datos</a></p>
   </aside>
 
@@ -174,10 +174,20 @@
         <li>Una regresión con efectos fijos de municipalidad, año y mes confirma el patrón (detalle en el repositorio).</li>
       </ul></div>
       <div><h2>Fuentes</h2><ul>
-        <li>MEF, <a href="https://datosabiertos.mef.gob.pe/">datos abiertos</a>: gasto por proyecto e inversiones de Invierte.pe.</li>
-        <li>Contraloría, obras paralizadas a junio de 2026 (<span id="paral"></span> municipales).</li>
-        <li>ONPE e Infogob (JNE), elecciones municipales.</li>
-        <li>INEI, límites distritales.</li>
+        <li><b>Gasto en obras.</b> MEF, <a href="https://datosabiertos.mef.gob.pe/">Portal de Datos Abiertos</a>. Archivos anuales de ejecución del gasto
+          (<a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/2022-Gasto.csv">2022-Gasto.csv</a>, uno por año de 2007 a 2026;
+          2016 y 2017 de <a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/2016-Gasto-Devengado.csv">Gasto-Devengado</a>).</li>
+        <li><b>Costo y ubicación de cada obra.</b> MEF, Banco de Inversiones de Invierte.pe
+          (<a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/DETALLE_INVERSIONES.csv">DETALLE_INVERSIONES.csv</a> y
+          <a href="https://fs.datosabiertos.mef.gob.pe/datastorefiles/CIERRE_INVERSIONES.csv">CIERRE_INVERSIONES.csv</a>).</li>
+        <li><b>Elecciones municipales distritales.</b> 2006-2018: JNE, <a href="https://infogob.jne.gob.pe/BaseDatos">Infogob</a>
+          (copias en <a href="https://github.com/nicosil02/Dashboard">nicosil02/Dashboard</a>,
+          <a href="https://github.com/juanca-pg/R-Programming-Course-Code">juanca-pg</a> y
+          <a href="https://github.com/EdwinSotto123/vigia-peru">vigia-peru</a>). 2022: ONPE,
+          <a href="https://www.datosabiertos.gob.pe/dataset/resultados-por-mesa-de-las-elecciones-municipales-distritales-2022-oficina-nacional-de">resultados por mesa</a>.</li>
+        <li><b>Obras paralizadas.</b> Contraloría, <a href="https://www.gob.pe/institucion/contraloria/informes-publicaciones/8489152-informe-de-obras-paralizadas-en-el-territorio-nacional-a-junio-de-2026">informe a junio de 2026</a>
+          (<span id="paral"></span> obras municipales).</li>
+        <li><b>Mapa de distritos.</b> <a href="https://github.com/juaneladio/peru-geojson">peru-geojson</a>, con códigos de ubigeo del INEI.</li>
       </ul></div>
       <div><h2>Limitaciones</h2><ul>
         <li>Muestra asociación, no causalidad.</li>
