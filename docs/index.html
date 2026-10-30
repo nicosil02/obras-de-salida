@@ -145,7 +145,7 @@
     <div class="fila f-mapa">
       <section class="panel">
         <h2 id="t-mapa"></h2>
-        <p class="sub">Último año de la gestión frente al primero. Haz clic en un distrito para ver su gasto año por año.</p>
+        <p class="sub">Último año de la gestión frente al primero. Haz clic en un distrito para ver su gasto año por año, y en el fondo blanco para volver a la vista anterior.</p>
         <svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos según cuánto cambió su gasto"></svg>
         <div class="ley"><span><i style="background:var(--acento)"></i>Más del doble</span>
           <span><i style="background:var(--acento-claro)"></i>Más, pero menos del doble</span>
@@ -441,8 +441,15 @@ function mapa(s) {
   let g = svg.select("g.z");
   if (g.empty()) {
     g = svg.append("g").attr("class", "z");
-    // Clic fuera del distrito elegido: vuelve a la provincia.
-    svg.on("click", e => { if (distrito && e.target === svg.node()) verDistrito(null); });
+    // Clic en el fondo: sube un nivel (distrito -> provincia -> departamento -> Perú).
+    svg.on("click", e => {
+      if (e.target !== svg.node()) return;
+      if (distrito) return verDistrito(null);
+      if ($("f-prov").value) $("f-prov").value = "";
+      else if ($("f-dep").value !== "PE") { $("f-dep").value = "PE"; provincias(); }
+      else return;
+      actualizar();
+    });
   }
   const sel = distrito && feats.find(f => f.properties.u === distrito);
   const ps = g.selectAll("path").data(feats, f => f.properties.u).join("path")
