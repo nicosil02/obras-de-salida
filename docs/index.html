@@ -55,7 +55,15 @@
   td { padding: 6px; }
   tbody tr:nth-child(odd) td { background: #fafaf8; }
   .num { text-align: right; }
-  .porque p { margin: 0 0 10px; color: var(--tinta-2); max-width: 62ch; }
+  .porque .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .porque p { margin: 0; color: var(--tinta-2); }
+  .play { width: 100%; font: inherit; font-weight: 600; margin-top: 8px; padding: 8px 10px; border: 0; border-radius: 6px;
+          background: var(--acento); color: #fff; cursor: pointer; }
+  .play:hover { background: #a3360a; }
+  .chip { margin-bottom: 22px; padding: 10px; border: 1px solid var(--acento); border-radius: 6px; font-size: 13.5px; }
+  .chip button { font: inherit; font-size: 13px; margin-top: 6px; padding: 4px 10px; border: 1px solid #c9ccd0; border-radius: 6px;
+                 background: var(--papel); cursor: pointer; }
+  #mapa path { cursor: pointer; }
   .porque p b { color: var(--tinta); }
   .texto { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 16px; margin-top: 16px; font-size: 13.5px; color: var(--tinta-2); }
   .texto h2 { font-size: 15px; color: var(--tinta); margin: 0 0 6px; }
@@ -67,7 +75,7 @@
     .app { grid-template-columns: 1fr; } aside { position: static; min-height: 0; border-right: 0; border-bottom: 1px solid var(--linea); }
     .gestiones { grid-template-columns: repeat(4, 1fr); }
     .kpis { grid-template-columns: 1fr 1fr; } .kpi:nth-child(3) { border-left: 0; }
-    .f-mapa, .texto { grid-template-columns: 1fr; }
+    .f-mapa, .texto, .porque .cols { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -89,7 +97,9 @@
         <option value="2">Medianas</option>
         <option value="1">Pequeñas (el tercio que menos gasta)</option>
       </select></div>
-    <div class="ctrl"><span>Gestión municipal</span><div class="gestiones" id="f-ges"></div></div>
+    <div class="ctrl"><span>Gestión municipal</span><div class="gestiones" id="f-ges"></div>
+      <button class="play" id="play" type="button">▶ Recorrer las gestiones</button></div>
+    <div class="chip" id="chip" hidden></div>
     <p class="nota">Cada gestión dura 4 años. El primer año entra el alcalde y el último hay elecciones.</p>
     <p class="nota">Datos del MEF, la Contraloría, ONPE e Infogob.<br>
       <a href="#metodo">Cómo se calculó</a><br><a href="https://github.com/nicosil02/obras-de-salida">Código y datos</a></p>
@@ -104,8 +114,8 @@
     </div>
 
     <section class="panel" style="margin-top:16px">
-      <h2>Cada gestión termina con su año de más gasto en obras</h2>
-      <p class="sub">Gasto municipal en obras por año, en millones de soles. Haz clic en una barra para elegir esa gestión.</p>
+      <h2 id="t-anual"></h2>
+      <p class="sub" id="s-anual"></p>
       <svg id="anual" viewBox="0 0 1000 300" role="img" aria-label="Gasto municipal en obras por año, 2007 a 2026"></svg>
       <div class="ley"><span><i style="background:var(--acento)"></i>Año de elecciones (último año del alcalde)</span>
         <span><i style="background:var(--barra)"></i>Otros años</span>
@@ -115,7 +125,7 @@
     <div class="fila f-mapa">
       <section class="panel">
         <h2 id="t-mapa"></h2>
-        <p class="sub">Gasto en obras del último año de la gestión frente al del primero, distrito por distrito</p>
+        <p class="sub">Último año de la gestión frente al primero. Haz clic en un distrito para ver su gasto año por año.</p>
         <svg id="mapa" viewBox="0 0 440 600" role="img" aria-label="Mapa de distritos según cuánto cambió su gasto"></svg>
         <div class="ley"><span><i style="background:var(--acento)"></i>Más del doble</span>
           <span><i style="background:var(--acento-claro)"></i>Más, pero menos del doble</span>
@@ -141,12 +151,12 @@
     <div class="fila">
       <section class="panel porque">
         <h2 style="margin-bottom:10px">¿Por qué pasa?</h2>
-        <p>En el Perú los partidos son débiles y la política local gira en torno a la persona del alcalde.
+        <div class="cols"><p>En el Perú los partidos son débiles y la política local gira en torno a la persona del alcalde.
           Hasta 2014 podía reelegirse y le convenía <b>empezar obras antes de votar</b> para mostrarlas en campaña.</p>
         <p>Desde 2015 no puede reelegirse. Como sabe que se va, <b>acelera los pagos en su último año</b>.
           El que llega no tiene por qué terminar las obras de otro, menos aún si es de otro partido.</p>
         <p>Por eso importa mirar el ciclo completo del alcalde y no solo el mes de diciembre, cuando todas las
-          entidades del Estado gastan más por el cierre del año fiscal.</p>
+          entidades del Estado gastan más por el cierre del año fiscal.</p></div>
       </section>
     </div>
 
@@ -189,12 +199,20 @@ const Y0 = 2007, ANIOS = d3.range(Y0, 2027), GESTIONES = [2007, 2011, 2015, 2019
 const esElec = y => (y - Y0) % 4 === 3;
 const gas = (c, y) => c.g[y - Y0];
 const cambio = r => r >= 2 ? `${r.toFixed(1)} veces` : `${r >= 1 ? "+" : ""}${Math.round(100 * (r - 1))}%`;
-let D, M, GEO, tercio, ini = 2019;
+const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650;
+let D, M, GEO, tercio, ini = 2019, distrito = null, timer = null;
 
 const tip = $("tip");
 function verTip(e, html) { tip.style.display = "block"; tip.innerHTML = html;
   tip.style.left = Math.min(e.clientX + 14, innerWidth - 300) + "px"; tip.style.top = e.clientY + 14 + "px"; }
 const ocultarTip = () => tip.style.display = "none";
+
+// Cuenta desde el valor anterior hasta el nuevo.
+function contar(id, v, f) {
+  const el = $(id), p = el._v ?? v; el._v = v;
+  if (v == null) { el.textContent = "s/d"; el._v = null; return; }
+  d3.select(el).transition().duration(DUR).tween("n", () => t => el.textContent = f(p + (v - p) * t));
+}
 
 Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).then(r => r.json()))).then(([d, m, g]) => {
   D = d; M = m; GEO = g;
@@ -206,13 +224,25 @@ Promise.all(["datos.json", "mapa.json", "distritos.geojson"].map(f => fetch(f).t
     Object.entries(D.departamentos).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
   $("paral").textContent = fmt(D.paralizadas);
   d3.select("#f-ges").selectAll("button").data(GESTIONES).join("button").attr("type", "button")
-    .html(g => `${g}-${g + 3}<small>elecciones de ${g + 3}</small>`).on("click", (e, g) => elegir(g));
-  $("f-dep").addEventListener("change", actualizar);
+    .html(g => `${g}-${g + 3}<small>elecciones de ${g + 3}</small>`).on("click", (e, g) => { parar(); elegir(g); });
+  $("f-dep").addEventListener("change", () => { distrito = null; actualizar(); });
   $("f-tam").addEventListener("change", actualizar);
+  $("play").addEventListener("click", () => timer ? parar() : recorrer());
   actualizar();
 });
 
 function elegir(g) { ini = g; actualizar(); }
+function parar() { clearInterval(timer); timer = null; $("play").textContent = "▶ Recorrer las gestiones"; }
+function recorrer() {
+  $("play").textContent = "❚❚ Pausar";
+  elegir(GESTIONES[0]);
+  timer = setInterval(() => {
+    const i = GESTIONES.indexOf(ini);
+    if (i === GESTIONES.length - 1) return parar();
+    elegir(GESTIONES[i + 1]);
+  }, 2800);
+}
+function verDistrito(u) { distrito = distrito === u ? null : u; actualizar(); }
 
 function estado() {
   const dep = $("f-dep").value, tam = $("f-tam").value;
@@ -222,63 +252,86 @@ function estado() {
   const fin = ini + 3, primero = d3.sum(comp, c => gas(c, ini)), ultimo = d3.sum(comp, c => gas(c, fin));
   const dist = comp.filter(c => gas(c, ini) + gas(c, fin) > 0.05).map(c => ({ c, a: gas(c, ini), b: gas(c, fin) }));
   return { dep, tam, cols, fin, primero, ultimo, dist, zona: dep === "PE" ? "Perú" : D.departamentos[dep],
-           T: ini + 4, ab: D.abandono.filter(x => x.dep === dep) };
+           T: ini + 4, ab: D.abandono.filter(x => x.dep === dep), sel: distrito && M.columnas.find(c => c.u === distrito) };
 }
 
 function actualizar() {
   const s = estado();
   d3.select("#f-ges").selectAll("button").classed("on", g => g === ini);
-  kpis(s); anual(s); mapa(s); abandono(s); ranking(s);
+  const f = s.sel && GEO.features.find(f => f.properties.u === distrito);
+  $("chip").hidden = !s.sel;
+  if (s.sel) {
+    $("chip").innerHTML = `Viendo <b>${f.properties.n}</b> (${f.properties.p})<br><button type="button" id="quitar">Ver todos los distritos</button>`;
+    $("quitar").onclick = () => verDistrito(distrito);
+  }
+  kpis(s); anual(s, f); mapa(s); abandono(s); ranking(s);
 }
 
 function kpis(s) {
   const mas = s.dist.filter(d => d.b > d.a).length, t = s.ab.find(x => x.anio === s.T), p = s.ab.find(x => x.anio === s.T - 2);
-  $("k1").textContent = cambio(s.ultimo / s.primero);
+  contar("k1", s.ultimo / s.primero, cambio);
   $("k1l").textContent = `gasto en obras en ${s.fin}, último año del alcalde, frente a ${ini}, su primer año (de S/ ${fmt(s.primero)} a ${fmt(s.ultimo)} millones)`;
-  $("k2").textContent = Math.round(100 * mas / s.dist.length) + "%";
+  contar("k2", 100 * mas / s.dist.length, v => Math.round(v) + "%");
   $("k2l").textContent = `de los distritos (${fmt(mas)} de ${fmt(s.dist.length)}) gastó más en su último año que en el primero`;
-  $("k3").textContent = t ? Math.round(t.pct) + "%" : "s/d";
+  contar("k3", t && t.pct, v => Math.round(v) + "%");
   $("k3l").textContent = t ? `de las obras a medias se quedó sin pagos al entrar el nuevo alcalde en ${s.T}. En ${s.T - 2}, sin cambio, fue ${p ? Math.round(p.pct) : "s/d"}%.` : "";
-  $("k4").textContent = t ? fmt(t.abandonadas) : "s/d";
+  contar("k4", t && t.abandonadas, fmt);
   $("k4l").textContent = `obras a medias abandonadas tras el cambio de alcalde de ${s.T} (${s.zona})`;
 }
 
-function anual(s) {
-  const v = ANIOS.map(y => ({ y, g: d3.sum(s.cols, c => gas(c, y)) }));
+function anual(s, f) {
+  const fuente = s.sel ? [s.sel] : s.cols;
+  $("t-anual").textContent = s.sel ? `Gasto en obras de ${f.properties.n} (${f.properties.p}), año por año`
+    : "Cada gestión termina con su año de más gasto en obras";
+  $("s-anual").textContent = s.sel ? "Millones de soles. Haz clic otra vez en el distrito para volver al total."
+    : "Gasto municipal en obras por año, en millones de soles. Haz clic en una barra para elegir esa gestión.";
+  const v = ANIOS.map(y => ({ y, g: d3.sum(fuente, c => gas(c, y)) }));
   const W = 1000, H = 300, m = { t: 40, r: 10, b: 50, l: 56 };
   const x = d3.scaleBand().domain(ANIOS).range([m.l, W - m.r]).paddingInner(0.25).paddingOuter(0.1);
-  const y = d3.scaleLinear().domain([0, d3.max(v, d => d.g) * 1.15]).nice().range([H - m.b, m.t]);
-  const svg = d3.select("#anual"); svg.selectAll("*").remove();
-  svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(d => fmt(d)))
+  const y = d3.scaleLinear().domain([0, (d3.max(v, d => d.g) || 1) * 1.15]).nice().range([H - m.b, m.t]);
+  const svg = d3.select("#anual"), ancho4 = x.step() * 3 + x.bandwidth(), sel = d => d.y >= ini && d.y <= ini + 3;
+  if (svg.select(".barras").empty()) {
+    ["fondo", "eje", "barras", "etq", "anot"].forEach(k => svg.append("g").attr("class", k));
+    svg.select(".etq").selectAll("text").data(ANIOS).join("text").attr("x", d => x(d) + x.bandwidth() / 2).attr("y", H - m.b + 16)
+      .attr("text-anchor", "middle").attr("font-size", 12).attr("fill", d => esElec(d) ? C.acento : C.tinta3)
+      .attr("font-weight", d => esElec(d) ? 600 : 400).text(d => d);
+    svg.select(".fondo").append("rect").attr("y", m.t - 34).attr("height", H - m.b - m.t + 34).attr("width", ancho4 + 16)
+      .attr("fill", "#f3f3f0").attr("rx", 4).attr("x", x(ini) - 8);
+  }
+  svg.select(".fondo rect").transition().duration(DUR).attr("x", x(ini) - 8);
+  svg.select(".eje").attr("transform", `translate(${m.l},0)`).transition().duration(DUR)
+    .call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(d => fmt(d)))
     .call(g => g.select(".domain").remove()).call(g => g.selectAll("line").attr("stroke", "#ececea"))
     .call(g => g.selectAll("text").attr("fill", C.tinta3).attr("font-size", 12));
-  const ancho4 = x.step() * 3 + x.bandwidth(), sel = d => d.y >= ini && d.y <= ini + 3;
-  svg.append("rect").attr("x", x(ini) - 8).attr("width", ancho4 + 16).attr("y", m.t - 34).attr("height", H - m.b - m.t + 34)
-    .attr("fill", "#f3f3f0").attr("rx", 4);
-  svg.selectAll("rect.b").data(v).join("rect").attr("class", "b").attr("x", d => x(d.y)).attr("width", x.bandwidth())
-    .attr("y", d => y(d.g)).attr("height", d => y(0) - y(d.g)).attr("rx", 2)
-    .attr("fill", d => esElec(d.y) ? C.acento : C.barra)
-    .attr("opacity", d => (d.y === Y0 || d.y === 2026 ? 0.45 : 1) * (sel(d) ? 1 : 0.6))
+  svg.select(".barras").selectAll("rect").data(v, d => d.y)
+    .join(e => e.append("rect").attr("x", d => x(d.y)).attr("width", x.bandwidth()).attr("rx", 2).attr("y", y(0)).attr("height", 0)
+      .attr("fill", d => esElec(d.y) ? C.acento : C.barra))
     .style("cursor", d => d.y < 2023 ? "pointer" : null)
-    .on("click", (e, d) => d.y < 2023 && elegir(Y0 + 4 * Math.floor((d.y - Y0) / 4)))
-    .on("mousemove", (e, d) => verTip(e, `<b>${d.y}</b><br>S/ ${fmt(d.g)} millones en obras` +
+    .on("click", (e, d) => { if (d.y < 2023) { parar(); elegir(Y0 + 4 * Math.floor((d.y - Y0) / 4)); } })
+    .on("mousemove", (e, d) => verTip(e, `<b>${d.y}</b><br>S/ ${d.g < 10 ? d.g.toFixed(1) : fmt(d.g)} millones en obras` +
       (d.y === Y0 ? "<br>Año incompleto" : d.y === 2026 ? "<br>Hasta septiembre" : "")))
-    .on("mouseleave", ocultarTip);
-  svg.selectAll("text.ax").data(ANIOS).join("text").attr("class", "ax").attr("x", d => x(d) + x.bandwidth() / 2).attr("y", H - m.b + 16)
-    .attr("text-anchor", "middle").attr("font-size", 12).attr("fill", d => esElec(d) ? C.acento : C.tinta3)
-    .attr("font-weight", d => esElec(d) ? 600 : 400).text(d => d);
-  [2007, 2011, 2015, 2019, 2023].forEach(g => svg.append("text").attr("x", x(g) + ancho4 / 2)
+    .on("mouseleave", ocultarTip)
+    .transition().duration(DUR)
+    .attr("y", d => y(d.g)).attr("height", d => y(0) - y(d.g))
+    .attr("opacity", d => (d.y === Y0 || d.y === 2026 ? 0.45 : 1) * (sel(d) ? 1 : 0.6));
+  // Nombres de gestion y anotacion del cambio (aparecen al terminar la transicion).
+  const an = svg.select(".anot"); an.selectAll("*").remove();
+  [2007, 2011, 2015, 2019, 2023].forEach(g => an.append("text").attr("x", x(g) + ancho4 / 2)
     .attr("y", H - m.b + 36).attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", g === ini ? 700 : 400)
     .attr("fill", g === ini ? C.tinta : C.tinta3).text(`Gestión ${g}-${g + 3}${g === 2023 ? " (en curso)" : ""}`));
-  // Primer y ultimo anio de la gestion elegida, con el cambio entre ambos.
-  const a = v.find(d => d.y === ini), b = v.find(d => d.y === ini + 3);
-  [a, b].forEach(d => svg.append("text").attr("x", x(d.y) + x.bandwidth() / 2).attr("y", y(d.g) - 6).attr("text-anchor", "middle")
-    .attr("font-size", 12.5).attr("font-weight", 600).attr("fill", C.tinta).text(fmt(d.g)));
-  const xa = x(a.y) + x.bandwidth() / 2, xb = x(b.y) + x.bandwidth() / 2, yl = Math.min(y(a.g), y(b.g)) - 24;
-  svg.append("path").attr("d", `M${xa},${y(a.g) - 20} V${yl} H${xb} V${y(b.g) - 20}`)
-    .attr("fill", "none").attr("stroke", C.tinta).attr("stroke-width", 1);
-  svg.append("text").attr("x", (xa + xb) / 2).attr("y", yl - 6).attr("text-anchor", "middle").attr("font-size", 14)
-    .attr("font-weight", 700).attr("fill", C.acento).text(cambio(s.ultimo / s.primero) + " en el último año");
+  const a = v.find(d => d.y === ini), b = v.find(d => d.y === ini + 3), r = a.g > 0 ? b.g / a.g : null;
+  const nota = an.append("g").attr("opacity", 0);
+  const fm = n => n < 10 ? n.toFixed(1) : fmt(n);
+  [a, b].forEach(d => nota.append("text").attr("x", x(d.y) + x.bandwidth() / 2).attr("y", y(d.g) - 6).attr("text-anchor", "middle")
+    .attr("font-size", 12.5).attr("font-weight", 600).attr("fill", C.tinta).text(fm(d.g)));
+  if (r != null) {
+    const xa = x(a.y) + x.bandwidth() / 2, xb = x(b.y) + x.bandwidth() / 2, yl = Math.min(y(a.g), y(b.g)) - 24;
+    nota.append("path").attr("d", `M${xa},${y(a.g) - 20} V${yl} H${xb} V${y(b.g) - 20}`)
+      .attr("fill", "none").attr("stroke", C.tinta).attr("stroke-width", 1);
+    nota.append("text").attr("x", (xa + xb) / 2).attr("y", yl - 6).attr("text-anchor", "middle").attr("font-size", 14)
+      .attr("font-weight", 700).attr("fill", r > 1 ? C.acento : C.tinta).text(cambio(r) + " en el último año");
+  }
+  nota.transition().delay(DUR).duration(DUR / 2).attr("opacity", 1);
 }
 
 function mapa(s) {
@@ -287,14 +340,18 @@ function mapa(s) {
   const feats = GEO.features.filter(f => s.dep === "PE" || f.properties.u.slice(0, 2) === s.dep);
   const proj = d3.geoMercator().fitExtent([[6, 6], [434, 594]], { type: "FeatureCollection", features: feats });
   const color = d => !d ? C.vacio : d.a <= 0 || d.b >= 2 * d.a ? C.acento : d.b > d.a ? C.claro : C.barra;
-  d3.select("#mapa").selectAll("path").data(feats, f => f.properties.u).join("path")
-    .attr("d", d3.geoPath(proj)).attr("stroke", "#fff").attr("stroke-width", s.dep === "PE" ? 0.2 : 0.5)
+  const ps = d3.select("#mapa").selectAll("path").data(feats, f => f.properties.u).join("path")
+    .attr("d", d3.geoPath(proj))
+    .attr("stroke", f => f.properties.u === distrito ? C.tinta : "#fff")
+    .attr("stroke-width", f => f.properties.u === distrito ? 2 : s.dep === "PE" ? 0.2 : 0.5)
+    .on("click", (e, f) => verDistrito(f.properties.u))
     .on("mousemove", (e, f) => { const d = r.get(f.properties.u);
       verTip(e, `<b>${f.properties.n}</b> (${f.properties.p})<br>` + (d
         ? `${ini}: S/ ${d.a.toFixed(1)} millones<br>${s.fin}: S/ ${d.b.toFixed(1)} millones` + (d.a > 0 ? `<br><b>${cambio(d.b / d.a)}</b>` : "")
-        : "Sin datos para este filtro")); })
-    .on("mouseleave", ocultarTip)
-    .transition().duration(300).attr("fill", f => color(r.get(f.properties.u)));
+        : "Sin datos para este filtro") + "<br><i>Clic para ver su gasto año por año</i>"); })
+    .on("mouseleave", ocultarTip);
+  ps.filter(f => f.properties.u === distrito).raise();
+  ps.transition().duration(DUR).attr("fill", f => color(r.get(f.properties.u)));
 }
 
 function abandono(s) {
@@ -305,17 +362,20 @@ function abandono(s) {
   const x0 = d3.scaleBand().domain(T).range([m.l, W - m.r]).paddingInner(0.3), x1 = d3.scaleBand().domain([0, 1]).range([0, x0.bandwidth()]).padding(0.08);
   const dat = T.flatMap(t => [[t, 0, s.ab.find(a => a.anio === t - 2)], [t, 1, s.ab.find(a => a.anio === t)]]).filter(d => d[2]);
   const y = d3.scaleLinear().domain([0, Math.max(40, d3.max(dat, d => d[2].pct))]).range([H - m.b, m.t]);
-  const svg = d3.select("#aband"); svg.selectAll("*").remove();
-  svg.selectAll("rect").data(dat).join("rect").attr("x", d => x0(d[0]) + x1(d[1])).attr("width", x1.bandwidth())
-    .attr("y", d => y(d[2].pct)).attr("height", d => y(0) - y(d[2].pct)).attr("rx", 2)
-    .attr("fill", d => d[1] ? C.acento : C.barra).attr("opacity", d => d[0] === s.T ? 1 : 0.55)
+  const svg = d3.select("#aband"), k = d => d[0] + "-" + d[1];
+  if (svg.select("line").empty()) svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(0)).attr("y2", y(0)).attr("stroke", "#c9ccd0");
+  svg.selectAll("rect").data(dat, k)
+    .join(e => e.append("rect").attr("x", d => x0(d[0]) + x1(d[1])).attr("width", x1.bandwidth()).attr("rx", 2)
+      .attr("y", y(0)).attr("height", 0).attr("fill", d => d[1] ? C.acento : C.barra))
     .on("mousemove", (e, d) => verTip(e, `<b>Enero ${d[1] ? d[0] : d[0] - 2}</b> (${d[1] ? "entra el nuevo alcalde" : "sin cambio"})<br>` +
       `${fmt(d[2].abandonadas)} de ${fmt(d[2].n)} obras a medias sin pagos`))
-    .on("mouseleave", ocultarTip);
-  svg.selectAll("text.v").data(dat).join("text").attr("class", "v").attr("x", d => x0(d[0]) + x1(d[1]) + x1.bandwidth() / 2)
-    .attr("y", d => y(d[2].pct) - 6).attr("text-anchor", "middle").attr("font-size", 13).attr("font-weight", d => d[0] === s.T ? 700 : 500)
-    .attr("fill", C.tinta).text(d => Math.round(d[2].pct) + "%");
-  svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(0)).attr("y2", y(0)).attr("stroke", "#c9ccd0");
+    .on("mouseleave", ocultarTip)
+    .transition().duration(DUR).attr("y", d => y(d[2].pct)).attr("height", d => y(0) - y(d[2].pct))
+    .attr("opacity", d => d[0] === s.T ? 1 : 0.5);
+  svg.selectAll("text.v").data(dat, k).join(e => e.append("text").attr("class", "v").attr("y", y(0) - 6))
+    .attr("x", d => x0(d[0]) + x1(d[1]) + x1.bandwidth() / 2).attr("text-anchor", "middle").attr("font-size", 13)
+    .attr("font-weight", d => d[0] === s.T ? 700 : 500).attr("fill", C.tinta).text(d => Math.round(d[2].pct) + "%")
+    .transition().duration(DUR).attr("y", d => y(d[2].pct) - 6);
   svg.selectAll("text.t").data(T).join("text").attr("class", "t").attr("x", t => x0(t) + x0.bandwidth() / 2).attr("y", H - m.b + 18)
     .attr("text-anchor", "middle").attr("font-size", 12.5).attr("font-weight", t => t === s.T ? 700 : 400)
     .attr("fill", t => t === s.T ? C.tinta : C.tinta3).text(t => `Cambio de ${t}`);
@@ -325,9 +385,11 @@ function ranking(s) {
   const top = s.dist.filter(d => d.a >= 1).sort((p, q) => q.b / q.a - p.b / p.a).slice(0, 8);
   $("t-rank").textContent = `Donde más creció el gasto en el último año (${s.zona})`;
   $("th1").textContent = `${ini} (S/ mill.)`; $("th4").textContent = `${s.fin} (S/ mill.)`;
-  $("rank").innerHTML = top.length ? top.map(d => `<tr><td>${d.c.n}</td><td class="num">${d.a.toFixed(1)}</td>` +
-    `<td class="num">${d.b.toFixed(1)}</td><td class="num"><b>${cambio(d.b / d.a)}</b></td></tr>`).join("")
-    : `<tr><td colspan="4">No hay distritos con ese tamaño de gasto en este filtro.</td></tr>`;
+  d3.select("#rank").selectAll("tr").data(top.length ? top : [null]).join("tr")
+    .html(d => d ? `<td>${d.c.n}</td><td class="num">${d.a.toFixed(1)}</td><td class="num">${d.b.toFixed(1)}</td>` +
+      `<td class="num"><b>${cambio(d.b / d.a)}</b></td>` : `<td colspan="4">No hay distritos con ese tamaño de gasto en este filtro.</td>`)
+    .style("cursor", d => d ? "pointer" : null).on("click", (e, d) => d && verDistrito(d.c.u))
+    .style("opacity", 0).transition().duration(DUR).delay((d, i) => i * 40).style("opacity", 1);
 }
 </script>
 </body>
